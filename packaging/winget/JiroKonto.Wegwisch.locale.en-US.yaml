@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: JiroKonto.Wegwisch
+PackageVersion: 0.2.2
+PackageLocale: en-US
+Publisher: JiroKonto
+PublisherUrl: https://github.com/JiroKonto
+PublisherSupportUrl: https://github.com/JiroKonto/wegwisch/issues
+PackageName: Wegwisch
+PackageUrl: https://jirokonto.github.io/wegwisch/
+License: MIT
+LicenseUrl: https://github.com/JiroKonto/wegwisch/blob/main/LICENSE
+ShortDescription: Tinder for your hard drive – swipe through what's eating your disk, biggest first.
+Description: |-
+  Wegwisch shows the biggest folders and files on your drives one card at a time.
+  Swipe left to put something on the delete pile, right to keep it or look inside, up to ask an AI what it is.
+  Includes a WinDirStat-style block view, a junk radar for caches and temp files, duplicate finding,
+  proper uninstalling of programs and Recycle Bin cleanup. Nothing is deleted until you confirm,
+  and everything goes to the Recycle Bin by default. Runs locally in your browser; nothing is uploaded.
+Moniker: wegwisch
+Tags:
+- cleanup
+- disk-cleanup
+- disk-space
+- disk-usage
+- duplicates
+- storage
+- treemap
+ReleaseNotesUrl: https://github.com/JiroKonto/wegwisch/releases/tag/v0.2.2
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

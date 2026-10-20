@@ -66,3 +66,30 @@ jobs:
       - run: npm install -g npm@latest
       - run: npm ci
       - run: npm publish --access public --provenance
+
+  scoop:
+    # keep bucket/wegwisch.json pointing at the newest Windows download
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: update Scoop manifest
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          URL="https://github.com/JiroKonto/wegwisch/releases/download/$TAG/wegwisch-windows-x64.exe"
+          HASH=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          node -e "
+            const f = 'bucket/wegwisch.json', m = JSON.parse(require('fs').readFileSync(f, 'utf8'));
+            m.version = process.argv[1];
+            m.architecture['64bit'].url = process.argv[2] + '#/wegwisch.exe';
+            m.architecture['64bit'].hash = process.argv[3];
+            require('fs').writeFileSync(f, JSON.stringify(m, null, 4) + '\n');" "$VERSION" "$URL" "$HASH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Scoop: wegwisch $VERSION" && git push || echo "nothing to update"

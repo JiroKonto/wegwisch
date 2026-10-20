@@ -68,6 +68,13 @@ Nothing is deleted while you swipe. Everything goes onto a **delete pile** that 
 
 > The files aren't code-signed yet, so Windows SmartScreen shows "Windows protected your PC" → *More info* → *Run anyway*. On macOS: right-click → *Open*, or `xattr -d com.apple.quarantine wegwisch-macos-arm64`.
 
+**With Scoop** (Windows):
+
+```powershell
+scoop bucket add wegwisch https://github.com/JiroKonto/wegwisch
+scoop install wegwisch/wegwisch
+```
+
 **With Node.js** (18.15 or newer):
 
 ```bash

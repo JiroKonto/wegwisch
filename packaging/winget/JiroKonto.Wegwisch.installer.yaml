@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+PackageIdentifier: JiroKonto.Wegwisch
+PackageVersion: 0.2.2
+InstallerType: portable
+Commands:
+- wegwisch
+ReleaseDate: 2026-10-20
+Installers:
+- Architecture: x64
+  InstallerUrl: https://github.com/JiroKonto/wegwisch/releases/download/v0.2.2/wegwisch-windows-x64.exe
+  InstallerSha256: 49F4C11665580AD61EC7E3578AD3302BE60D969F2D17554C37911817EB9E8BDC
+ManifestType: installer
+ManifestVersion: 1.6.0
