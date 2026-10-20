@@ -31,6 +31,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,8 +44,9 @@ jobs:
         shell: bash
         run: |
           EXE=dist/wegwisch; [ -f dist/wegwisch.exe ] && EXE=dist/wegwisch.exe
-          WEGWISCH_DATA="$RUNNER_TEMP/ww" "$EXE" --no-open --port 4799 &
-          for i in $(seq 1 40); do curl -sf -o /dev/null http://localhost:4799/ && break; sleep 0.5; done
-          curl -sf http://localhost:4799/ | grep -q Wegwisch
-          curl -sf -H 'x-wegwisch: 1' http://localhost:4799/api/drives | grep -q total
-          kill %1 || true
+          WEGWISCH_DATA="$RUNNER_TEMP/ww" "$EXE" --no-open --port 4799 > "$RUNNER_TEMP/exe.log" 2>&1 &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true; cat "$RUNNER_TEMP/exe.log"' EXIT
+          for i in $(seq 1 60); do curl -sf --max-time 5 -o /dev/null http://127.0.0.1:4799/ -H 'Host: localhost:4799' && break; sleep 1; done
+          curl -sf --max-time 10 -H 'Host: localhost:4799' http://127.0.0.1:4799/ | grep -q Wegwisch
+          curl -sf --max-time 30 -H 'Host: localhost:4799' -H 'x-wegwisch: 1' http://127.0.0.1:4799/api/drives | grep -q total
