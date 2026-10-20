@@ -25,7 +25,7 @@ function setRoots(list) { roots = list.map(key).sort((a, b) => b.length - a.leng
 function rootOf(k) { return roots.find(r => isUnder(k, r)); }
 
 function spawnWorker() {
-  const w = new Worker(path.join(__dirname, 'scan-worker.js'));
+  const w = new Worker(...require('./bundle').workerSource());
   w.busy = false;
   w.on('message', msg => { w.busy = false; onResult(msg); pump(); });
   w.on('error', () => {});

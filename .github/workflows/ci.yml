@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [20, 22]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  exe:
+    name: build exe (${{ matrix.os }})
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:exe
+      - name: smoke-test the executable
+        shell: bash
+        run: |
+          EXE=dist/wegwisch; [ -f dist/wegwisch.exe ] && EXE=dist/wegwisch.exe
+          WEGWISCH_DATA="$RUNNER_TEMP/ww" "$EXE" --no-open --port 4799 &
+          for i in $(seq 1 40); do curl -sf -o /dev/null http://localhost:4799/ && break; sleep 0.5; done
+          curl -sf http://localhost:4799/ | grep -q Wegwisch
+          curl -sf -H 'x-wegwisch: 1' http://localhost:4799/api/drives | grep -q total
+          kill %1 || true

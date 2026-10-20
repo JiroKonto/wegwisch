@@ -16,8 +16,8 @@ const { classify } = require('./protect');
 const pkg = require('../package.json');
 
 const { settings } = config;
-const PUBLIC = path.join(__dirname, '..', 'public');
-const APP_ROOT = path.join(__dirname, '..');
+const bundle = require('./bundle');
+const APP_ROOT = bundle.ROOT;
 // space actually used on disk (sparse files, cloud placeholders), same as the scanner
 const onDisk = st => typeof st.blocks === 'number' ? st.blocks * 512 : st.size;
 const IMG = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']);
@@ -266,9 +266,9 @@ function start({ port = 4747, open = true, threads } = {}) {
     try {
       if (!url.pathname.startsWith('/api/')) {
         const f = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
-        const file = path.join(PUBLIC, path.normalize(f));
-        if (!file.startsWith(PUBLIC) || !fs.existsSync(file)) return send(res, 404, 'not found', 'text/plain');
-        return send(res, 200, fs.readFileSync(file), MIME[path.extname(file)] || 'application/octet-stream');
+        const body = bundle.publicFile(f);
+        if (!body) return send(res, 404, 'not found', 'text/plain');
+        return send(res, 200, body, MIME[path.extname(f)] || 'application/octet-stream');
       }
       if (url.pathname === '/api/raw') { // image preview; <img> can't send custom headers
         if (!q || !IMG.has(path.extname(q).toLowerCase())) return send(res, 404, {});
