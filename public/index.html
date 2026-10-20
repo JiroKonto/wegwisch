@@ -14,6 +14,7 @@
   <div class="logo" id="logo">Weg<b>wisch</b></div>
   <div class="crumbs mono" id="crumbs"></div>
   <div class="scanpill" id="scanpill" hidden><span class="dot"></span><span id="scantxt"></span></div>
+  <button class="hbtn" id="modeBtn" hidden></button>
   <button class="hbtn" id="langBtn">EN</button>
   <button class="hbtn" id="setBtn" title="Settings">⚙</button>
   <button class="hbtn tray" id="trayBtn">🗑 <span class="n" id="trayN">0</span> · <span id="trayS">0 B</span></button>
@@ -22,7 +23,32 @@
   <section class="screen on" id="start">
     <h1 data-t="pickDrive"></h1>
     <p class="sub" data-t="pickSub"></p>
+    <div class="modepick" id="modePick">
+      <button data-mode="swipe"><b>🃏 <span data-t="modeSwipe"></span></b><span data-t="modeSwipeSub"></span></button>
+      <button data-mode="classic"><b>📊 <span data-t="modeClassic"></span></b><span data-t="modeClassicSub"></span></button>
+    </div>
     <div class="grid" id="driveGrid"></div>
+  </section>
+
+  <section class="screen" id="classic">
+    <div class="ctop">
+      <button class="hbtn" id="cUp" title="Backspace">↑</button>
+      <div class="cpath mono" id="cPath"></div>
+      <input type="text" id="cFilter" spellcheck="false">
+    </div>
+    <div class="cinfo" id="cInfo"></div>
+    <div class="ctable">
+      <div class="crow chead">
+        <span></span><span></span>
+        <button data-sort="name" data-t="colName"></button>
+        <button data-sort="size" data-t="colSize"></button>
+        <span class="cpct">%</span>
+        <button data-sort="files" class="cfiles" data-t="colFiles"></button>
+        <button data-sort="mtime" class="cdate" data-t="colModified"></button>
+        <span></span>
+      </div>
+      <div id="cRows"></div>
+    </div>
   </section>
 
   <section class="screen" id="deckScreen">
@@ -103,5 +129,6 @@
 
 <script src="i18n.js"></script>
 <script src="app.js"></script>
+<script src="classic.js"></script>
 </body>
 </html>

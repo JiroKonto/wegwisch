@@ -2,6 +2,9 @@
 window.I18N = {
   en: {
     pickDrive: 'Which drive should we clean up?',
+    modeSwipe: 'Swipe', modeSwipeSub: 'One card at a time, biggest first', modeClassic: 'Classic', modeClassicSub: 'Explorer-style list with all sizes at once',
+    colName: 'Name', colSize: 'Size', colFiles: 'Files', colModified: 'Modified',
+    cEntries: '{n} entries', cPicked: '{s} selected', cEmpty: 'This folder is empty.', cMore: 'Show {n} more', cFilter: 'Filter…',
     pickSub: 'Biggest things first. Swipe left to delete, right to keep or look inside. Nothing is removed until you confirm at the end.',
     junkTitle: 'Junk radar', junkSub: 'Caches, temp files, old installers, build leftovers – known stuff that is safe to clear.',
     junkScanHint: 'Scan a drive (or turn on background scanning) to also find node_modules, Unity/Unreal caches and archive duplicates.',
@@ -50,6 +53,9 @@ window.I18N = {
   },
   de: {
     pickDrive: 'Welche Festplatte räumen wir auf?',
+    modeSwipe: 'Swipe', modeSwipeSub: 'Eine Karte nach der anderen, das Größte zuerst', modeClassic: 'Klassisch', modeClassicSub: 'Liste wie im Explorer, alle Größen auf einen Blick',
+    colName: 'Name', colSize: 'Größe', colFiles: 'Dateien', colModified: 'Geändert',
+    cEntries: '{n} Einträge', cPicked: '{s} ausgewählt', cEmpty: 'Dieser Ordner ist leer.', cMore: '{n} weitere anzeigen', cFilter: 'Filtern…',
     pickSub: 'Das Größte zuerst. Links wischen = löschen, rechts = behalten oder reinschauen. Gelöscht wird erst, wenn du am Ende bestätigst.',
     junkTitle: 'Müll-Radar', junkSub: 'Caches, Temp-Dateien, alte Installer, Build-Reste – bekannter Kram, der weg kann.',
     junkScanHint: 'Scanne eine Festplatte (oder schalte den Hintergrund-Scan ein), um auch node_modules, Unity/Unreal-Caches und doppelte Archive zu finden.',

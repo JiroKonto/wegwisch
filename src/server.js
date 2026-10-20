@@ -67,7 +67,8 @@ async function listDir(dir) {
     if (isDir && it.size == null) { waiting++; scanner.request(fp, true); }
     items.push(it);
   }));
-  return { path: dir, items, waiting };
+  const parent = path.dirname(dir);
+  return { path: dir, parent: parent !== dir ? parent : null, items, waiting };
 }
 
 async function peek(p) {

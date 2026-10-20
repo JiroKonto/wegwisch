@@ -50,7 +50,7 @@ function icon(it) {
 }
 let toastT;
 function toast(s) { const el = $('#toast'); el.textContent = s; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200); }
-function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); if (typeof updateModeBtn === 'function') updateModeBtn(); }
 const onScreen = id => $('#' + id).classList.contains('on');
 
 // ---------- state ----------
@@ -97,7 +97,7 @@ async function goStart() {
       <div class="bar"><i style="width:${pct}%"></i></div></button>`;
   }).join('');
   $('#driveGrid').innerHTML = drives + `<button class="junkcard" id="junkBtn"><div class="big">🧹</div><div><b>${t('junkTitle')}</b><span>${t('junkSub')}</span></div></button>`;
-  document.querySelectorAll('.drive').forEach(b => b.onclick = () => { exploreQ = []; openDir(b.dataset.path); });
+  document.querySelectorAll('.drive').forEach(b => b.onclick = () => openFolder(b.dataset.path));
   $('#junkBtn').onclick = openJunk;
 }
 
@@ -311,6 +311,7 @@ function openReview() {
 }
 function backFromReview() {
   if (reviewFrom === 'deckScreen' && cur) { show('deckScreen'); render(); }
+  else if (reviewFrom === 'classic' && cls.path) { show('classic'); refreshClassic(); }
   else if (reviewFrom === 'done' || reviewFrom === 'result' || !cur) goStart();
   else show(reviewFrom);
 }
@@ -421,6 +422,8 @@ function setLang(l) {
   if (onScreen('start')) goStart();
   else if (onScreen('deckScreen') && cur) render();
   else if (onScreen('review')) renderReview();
+  else if (onScreen('classic')) renderClassic();
+  if (typeof updateModeBtn === 'function') updateModeBtn();
 }
 
 // ---------- wiring ----------
@@ -439,7 +442,7 @@ $('#aAsk').onclick = () => decide('u'); $('#aForever').onclick = () => decide('d
 $('#doneOther').onclick = goStart; $('#doneReview').onclick = openReview;
 $('#revBack').onclick = backFromReview; $('#doDelete').onclick = doDelete;
 $('#saveImg').onclick = saveImg; $('#copyImg').onclick = copyImg;
-$('#resContinue').onclick = () => (cur ? (show('deckScreen'), render()) : goStart());
+$('#resContinue').onclick = () => (reviewFrom === 'classic' && cls.path ? openClassic(cls.path) : cur ? (show('deckScreen'), render()) : goStart());
 
 (async () => {
   applyI18n();

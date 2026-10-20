@@ -18,12 +18,13 @@ Nothing is deleted while you swipe. Everything goes onto a **delete pile** that 
 
 *"Wegwisch" is German for "swipe it away".*
 
-| Junk radar | Delete pile | Result |
+| Classic mode | Junk radar | Delete pile |
 |---|---|---|
-| <img src="docs/junk.png" alt="Junk radar card for a 59.9 GB shader cache"> | <img src="docs/pile.png" alt="Delete pile with four items"> | <img src="docs/result.png" alt="Result screen: 123.6 GB freed, with share image"> |
+| <img src="docs/classic.png" alt="Classic mode: table of folders with size bars"> | <img src="docs/junk.png" alt="Junk radar card for a 59.9 GB shader cache"> | <img src="docs/pile.png" alt="Delete pile with four items"> |
 
 ## Features
 
+- **Two modes**: *Swipe* (one card at a time) or *Classic*, an Explorer-style table with every size at once, size bars, sorting and a filter. Checkbox = onto the delete pile. Switch any time; you stay in the same folder.
 - **Swipe or use the keyboard**: drag cards, or press `←` `→` `↑` `↓`, `Z` to undo, `S` to finish a folder.
 - **Folders first, then deeper**: swiping right on a folder queues its contents as the next deck.
 - **Fast parallel scanning**: a pool of worker threads (adjustable, 1–64) walks the disk. Folders you're looking at jump the queue. Sizes are the space *actually used on disk*, so sparse VM images and cloud placeholders don't show phantom gigabytes. Optionally scans all drives in the background.

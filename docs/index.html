@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wegwisch – Tinder for your hard drive</title>
+<meta name="description" content="Free, open-source disk cleanup you swipe through. Biggest folders first, left to delete, right to keep, up to ask an AI. Windows, macOS, Linux.">
+<meta property="og:title" content="Wegwisch – Tinder for your hard drive">
+<meta property="og:description" content="Swipe through what's eating your disk. Free & open source.">
+<meta property="og:image" content="https://jirokonto.github.io/wegwisch/card.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23ff4d6d'/%3E%3Cstop offset='.5' stop-color='%23a78bfa'/%3E%3Cstop offset='1' stop-color='%232fd47a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='14' y='8' width='36' height='48' rx='8' fill='%231a1d27' stroke='url(%23g)' stroke-width='4' transform='rotate(-12 32 32)'/%3E%3Cpath d='M22 34l7 7 14-16' fill='none' stroke='%232fd47a' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0d12; --bg2:#14161e; --card:#1a1d27; --line:#2a2e3b; --text:#eef0f6; --dim:#8b90a3;
+  --del:#ff4d6d; --keep:#2fd47a; --ask:#a78bfa; --lock:#4ea8ff; --warn:#ffb547;
+  --grad:linear-gradient(90deg,var(--del),var(--ask),var(--keep));
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font:16px/1.6 Inter,system-ui,sans-serif;overflow-x:hidden}
+a{color:inherit}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+nav{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);background:#0c0d12b8;border-bottom:1px solid #ffffff0a}
+nav .wrap{display:flex;align-items:center;gap:22px;height:62px}
+.logo{font-weight:800;font-size:20px;letter-spacing:-.02em;text-decoration:none}
+nav .links{margin-left:auto;display:flex;gap:20px;align-items:center;font-size:14px;color:var(--dim)}
+nav .links a{text-decoration:none} nav .links a:hover{color:var(--text)}
+.pill{border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--bg2);color:var(--text);font-weight:600;cursor:pointer;font:inherit;font-size:13px}
+.pill:hover{border-color:#4a5068}
+
+/* hero */
+.hero{position:relative;padding:80px 0 60px;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:-200px -100px auto;height:700px;background:radial-gradient(600px 380px at 25% 30%,#ff4d6d1f,transparent 70%),radial-gradient(600px 380px at 75% 20%,#a78bfa22,transparent 70%),radial-gradient(500px 300px at 60% 80%,#2fd47a14,transparent 70%);pointer-events:none}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;position:relative}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:13px;font-weight:600;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--bg2)}
+.eyebrow b{color:var(--keep)}
+h1{font-size:clamp(42px,6vw,72px);line-height:1.02;letter-spacing:-.045em;font-weight:900;margin:20px 0 18px}
+.lead{font-size:19px;color:#c4c8d6;max-width:540px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px;align-items:center}
+.cmd{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:12px 14px 12px 18px;font-size:16px}
+.cmd span{color:var(--dim)}
+.cmd button{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif}
+.cmd button:hover{border-color:#4a5068}
+.btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;border-radius:14px;padding:13px 20px;border:1px solid var(--line);background:var(--card)}
+.btn:hover{border-color:#4a5068}
+.btn.main{background:var(--text);color:#0c0d12;border-color:var(--text)}
+.btn.main:hover{filter:brightness(.92)}
+.meta{margin-top:18px;color:var(--dim);font-size:13.5px}
+
+/* card stack demo */
+.stage{position:relative;height:500px;max-width:380px;width:100%;margin:0 auto}
+.dcard{position:absolute;inset:0;background:linear-gradient(180deg,#1f2330,var(--card));border:1px solid var(--line);border-radius:28px;padding:26px;box-shadow:0 40px 80px -30px #000c;transition:transform .55s cubic-bezier(.3,.7,.2,1),opacity .55s}
+.dcard.b1{transform:scale(.94) translateY(20px);opacity:.6}
+.dcard.b2{transform:scale(.88) translateY(40px);opacity:.25}
+.dcard .ic{font-size:42px}
+.dcard .nm{font-size:22px;font-weight:800;margin-top:10px;letter-spacing:-.02em}
+.dcard .p{font-size:11px;color:var(--dim);margin-top:4px;word-break:break-all}
+.dcard .sz{font-size:44px;font-weight:800;letter-spacing:-.03em;margin-top:12px}
+.dcard .bar{height:7px;background:#262a37;border-radius:9px;overflow:hidden;margin:6px 0 12px}
+.dcard .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--keep),var(--warn),var(--del))}
+.chip{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin:0 4px 6px 0;color:#c9cdda;background:#ffffff08}
+.chip.j{color:var(--keep);border-color:#2fd47a66} .chip.w{color:var(--warn);border-color:#ffb54766}
+.dcard .ai{margin-top:10px;font-size:13px;background:#a78bfa1c;border:1px solid #a78bfa66;border-radius:14px;padding:10px 12px;opacity:0;transform:translateY(6px);transition:.4s}
+.dcard .ai.on{opacity:1;transform:none}
+.dcard .ai b{color:var(--warn)}
+.stamp{position:absolute;top:30px;white-space:nowrap;font-weight:900;font-size:24px;letter-spacing:.06em;border:3px solid;border-radius:12px;padding:5px 14px;opacity:0;transition:opacity .25s;background:#0c0d12cc}
+.stamp.l{right:24px;color:var(--del);transform:rotate(12deg)}
+.stamp.r{left:24px;color:var(--keep);transform:rotate(-12deg)}
+.stamp.u{left:50%;top:44%;transform:translateX(-50%);color:var(--ask)}
+.stamp.on{opacity:1}
+.keys{display:flex;justify-content:center;gap:10px;margin-top:22px}
+.keys span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--bg2);border:1px solid var(--line);font-size:18px;transition:.2s}
+.keys span.hit{transform:scale(1.18);border-color:currentColor}
+.keys .k1{color:var(--del)} .keys .k2{color:var(--lock)} .keys .k3{color:var(--ask)} .keys .k4{color:var(--keep)}
+
+section{padding:80px 0}
+h2{font-size:clamp(30px,4vw,44px);letter-spacing:-.035em;font-weight:800;line-height:1.1;margin-bottom:14px}
+.sub{color:var(--dim);font-size:17px;max-width:620px}
+
+/* gestures */
+.gest{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+.gest>div{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
+.gest .k{font-size:30px;font-weight:800;line-height:1}
+.gest h3{font-size:18px;margin:14px 0 6px}
+.gest p{color:var(--dim);font-size:14.5px}
+
+/* features */
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.feat>div{background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:24px}
+.feat .e{font-size:28px}
+.feat h3{font-size:17px;margin:10px 0 6px}
+.feat p{color:var(--dim);font-size:14.5px}
+
+/* screens */
+.shots{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-top:40px;align-items:start}
+.shots figure{background:var(--bg2);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.shots img{width:100%;display:block}
+.shots figcaption{padding:12px 16px;color:var(--dim);font-size:14px}
+.shots .side{display:grid;gap:18px}
+
+/* safety */
+.safe{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.safe>div{border-radius:20px;padding:24px;border:1px solid}
+.safe>.a{border-color:#4ea8ff55;background:#4ea8ff0d} .safe .b{border-color:#ffb54755;background:#ffb5470d} .safe .c{border-color:#2fd47a55;background:#2fd47a0d}
+.safe h3{font-size:18px;margin-bottom:8px}
+.safe p{color:#c4c8d6;font-size:14.5px}
+.promise{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px}
+.promise span{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:14px}
+
+.final{text-align:center;padding:100px 0}
+.final .cmd{display:inline-flex;margin-top:26px}
+footer{border-top:1px solid var(--line);padding:30px 0;color:var(--dim);font-size:14px}
+footer .wrap{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
+
+@media (max-width:900px){
+  .hero .wrap{grid-template-columns:1fr} .stage{height:470px}
+  .gest{grid-template-columns:1fr 1fr} .feat,.safe{grid-template-columns:1fr} .shots{grid-template-columns:1fr}
+  nav .links a.hide{display:none}
+}
+@media (max-width:520px){ .gest{grid-template-columns:1fr} .cmd{font-size:14px} section{padding:56px 0} .hero{padding:48px 0 30px} }
+@media (prefers-reduced-motion:reduce){ .dcard,.dcard .ai,.keys span{transition:none} }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="#">Weg<span class="g">wisch</span></a>
+  <div class="links">
+    <a href="#how" class="hide" data-t="nHow">How it works</a>
+    <a href="#safety" class="hide" data-t="nSafe">Safety</a>
+    <a href="https://github.com/JiroKonto/wegwisch">GitHub</a>
+    <button class="pill" id="lang">DE</button>
+  </div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div>
+    <span class="eyebrow"><b>●</b> <span data-t="eyebrow">Free & open source · Windows · macOS · Linux</span></span>
+    <h1 data-t-html="h1">Tinder for your <span class="g">hard drive.</span></h1>
+    <p class="lead" data-t="lead">Your disk is full and you don't know why. Wegwisch shows you the biggest things first, one card at a time. Swipe left to delete, right to keep or look inside, up to ask an AI what it even is.</p>
+    <div class="cta">
+      <div class="cmd mono"><span>$</span> npx wegwisch <button data-copy="npx wegwisch" data-t="copy">Copy</button></div>
+      <a class="btn" href="https://github.com/JiroKonto/wegwisch">★ GitHub</a>
+    </div>
+    <p class="meta" data-t="meta">Needs Node.js 18+. Runs only on your computer – nothing is uploaded.</p>
+  </div>
+  <div>
+    <div class="stage" id="stage" aria-hidden="true"></div>
+    <div class="keys" aria-hidden="true"><span class="k1">✕</span><span class="k2">🔒</span><span class="k3">✦</span><span class="k4">✓</span></div>
+  </div>
+</div></header>
+
+<section id="how"><div class="wrap">
+  <h2 data-t="hTitle">Four gestures. That's the whole app.</h2>
+  <p class="sub" data-t="hSub">Nothing is deleted while you swipe – everything lands on a delete pile you review at the end, and goes to the Recycle Bin by default.</p>
+  <div class="gest">
+    <div><div class="k" style="color:var(--del)">←</div><h3 data-t="g1">Delete</h3><p data-t="g1p">Onto the delete pile. You confirm everything at the end.</p></div>
+    <div><div class="k" style="color:var(--keep)">→</div><h3 data-t="g2">Keep / look inside</h3><p data-t="g2p">Files stay. Folders get queued – their contents come up next.</p></div>
+    <div><div class="k" style="color:var(--ask)">↑</div><h3 data-t="g3">Ask an AI</h3><p data-t="g3p">"What is this and can it go?" – a verdict in two sentences.</p></div>
+    <div><div class="k" style="color:var(--lock)">↓</div><h3 data-t="g4">Never again</h3><p data-t="g4p">Remembered forever, never suggested again.</p></div>
+  </div>
+</div></section>
+
+<section style="padding-top:0"><div class="wrap">
+  <h2 data-t="fTitle">Small app, sharp tools.</h2>
+  <div class="feat">
+    <div><div class="e">🧹</div><h3 data-t="f1">Junk radar</h3><p data-t="f1p">Shader caches, temp files, browser & dev caches, crash dumps – plus node_modules, Unity Library and Unreal caches it finds while scanning.</p></div>
+    <div><div class="e">📊</div><h3 data-t="f2">Classic mode</h3><p data-t="f2p">Prefer a list? An Explorer-style table with every size at once, size bars, sorting and filter. Switch any time.</p></div>
+    <div><div class="e">⚡</div><h3 data-t="f3">Fast, parallel scans</h3><p data-t="f3p">A pool of worker threads you can tune. Folders you're looking at jump the queue. Counts real disk usage – no phantom gigabytes from VM images.</p></div>
+    <div><div class="e">✦</div><h3 data-t="f4">AI that's optional</h3><p data-t="f4p">Claude Code, an Anthropic API key or a local model via Ollama. No AI? The up-swipe just disappears.</p></div>
+    <div><div class="e">👻</div><h3 data-t="f5">Finds forgotten stuff</h3><p data-t="f5p">Old Windows installs on second drives, zips next to their unpacked folder, installers rotting in Downloads.</p></div>
+    <div><div class="e">🏆</div><h3 data-t="f6">Brag about it</h3><p data-t="f6p">"You freed up 83 GB" – as a share image, plus all-time stats.</p></div>
+  </div>
+</div></section>
+
+<section style="padding-top:0"><div class="wrap">
+  <div class="shots">
+    <figure><img src="classic.png" alt="Classic mode: table of folders with size bars" loading="lazy"><figcaption data-t="s1">Classic mode – all sizes at a glance</figcaption></figure>
+    <div class="side">
+      <figure><img src="junk.png" alt="Junk radar card: 59.9 GB shader cache" loading="lazy"><figcaption data-t="s2">Junk radar</figcaption></figure>
+      <figure><img src="result.png" alt="Result: 123.6 GB freed" loading="lazy"><figcaption data-t="s3">The best screen</figcaption></figure>
+    </div>
+  </div>
+</div></section>
+
+<section id="safety" style="padding-top:20px"><div class="wrap">
+  <h2 data-t="sTitle">It deletes files. So it's paranoid.</h2>
+  <p class="sub" data-t="sSub">Every path gets classified before you even see the card. The rules are tested on Windows, macOS and Linux.</p>
+  <div class="safe">
+    <div class="a"><h3>🔒 <span data-t="l1">Locked</span></h3><p data-t="l1p">Your OS, drive roots, profile folders, cloud-synced folders (OneDrive, Dropbox, iCloud…), SSH keys, and folders of programs that are running right now.</p></div>
+    <div class="b"><h3>⚠ <span data-t="l2">Caution</span></h3><p data-t="l2p">Program folders, app data, Steam games, old Windows installs on other drives. Deletable – with a clear warning on the card.</p></div>
+    <div class="c"><h3>🧹 <span data-t="l3">Junk</span></h3><p data-t="l3p">Caches and temp folders are emptied, never removed – apps expect them to exist.</p></div>
+  </div>
+  <div class="promise">
+    <span data-t="p1">🗑 Recycle Bin by default</span><span data-t="p2">🏠 Runs only on 127.0.0.1</span><span data-t="p3">🔗 Never follows links</span><span data-t="p4">📭 No telemetry, no account</span><span data-t="p5">📖 MIT licensed</span>
+  </div>
+</div></section>
+
+<section class="final"><div class="wrap">
+  <h2 data-t-html="endTitle">Let's see what's <span class="g">eating your disk.</span></h2>
+  <div class="cmd mono"><span>$</span> npx wegwisch <button data-copy="npx wegwisch" data-t="copy">Copy</button></div>
+</div></section>
+
+<footer><div class="wrap">
+  <span>Wegwisch · <span data-t="foot">German for "swipe it away"</span></span>
+  <span><a href="https://github.com/JiroKonto/wegwisch">GitHub</a> · <a href="https://github.com/JiroKonto/wegwisch/issues">Issues</a> · MIT</span>
+</div></footer>
+
+<script>
+const T = {
+  de: {
+    nHow: 'So geht’s', nSafe: 'Sicherheit', eyebrow: 'Kostenlos & Open Source · Windows · macOS · Linux',
+    h1: 'Tinder für deine <span class="g">Festplatte.</span>',
+    lead: 'Deine Platte ist voll und du weißt nicht warum. Wegwisch zeigt dir das Größte zuerst, eine Karte nach der anderen. Links wischen = löschen, rechts = behalten oder reinschauen, nach oben = die KI fragen, was das überhaupt ist.',
+    copy: 'Kopieren', meta: 'Braucht Node.js 18+. Läuft nur auf deinem Rechner – nichts wird hochgeladen.',
+    hTitle: 'Vier Gesten. Das ist die ganze App.', hSub: 'Beim Wischen wird nichts gelöscht – alles landet auf einem Löschstapel, den du am Ende prüfst, und standardmäßig im Papierkorb.',
+    g1: 'Löschen', g1p: 'Auf den Löschstapel. Bestätigt wird alles am Ende.', g2: 'Behalten / reinschauen', g2p: 'Dateien bleiben. Ordner kommen in die Warteschlange – ihr Inhalt ist als Nächstes dran.',
+    g3: 'KI fragen', g3p: '„Was ist das und kann das weg?“ – ein Urteil in zwei Sätzen.', g4: 'Nie wieder', g4p: 'Für immer gemerkt, wird nie wieder vorgeschlagen.',
+    fTitle: 'Kleine App, scharfe Werkzeuge.',
+    f1: 'Müll-Radar', f1p: 'Shader-Caches, Temp-Dateien, Browser- & Entwickler-Caches, Absturzberichte – plus node_modules, Unity-Library und Unreal-Caches, die es beim Scannen findet.',
+    f2: 'Klassischer Modus', f2p: 'Lieber eine Liste? Eine Tabelle wie im Explorer mit allen Größen, Balken, Sortierung und Filter. Jederzeit umschaltbar.',
+    f3: 'Schnelle, parallele Scans', f3p: 'Ein Pool aus Worker-Threads, den du einstellen kannst. Was du gerade ansiehst, wird zuerst gescannt. Zählt echten Platzverbrauch – keine Phantom-Gigabytes von VM-Images.',
+    f4: 'KI ist optional', f4p: 'Claude Code, ein Anthropic-API-Key oder ein lokales Modell über Ollama. Keine KI? Dann verschwindet die Wisch-nach-oben-Geste einfach.',
+    f5: 'Findet Vergessenes', f5p: 'Alte Windows-Installationen auf Zweitplatten, Zips neben ihrem entpackten Ordner, Installer, die in Downloads vergammeln.',
+    f6: 'Angeben erlaubt', f6p: '„Du hast 83 GB freigemacht“ – als Bild zum Teilen, plus Gesamtstatistik.',
+    s1: 'Klassischer Modus – alle Größen auf einen Blick', s2: 'Müll-Radar', s3: 'Der schönste Bildschirm',
+    sTitle: 'Es löscht Dateien. Also ist es paranoid.', sSub: 'Jeder Pfad wird eingestuft, bevor du die Karte überhaupt siehst. Die Regeln sind für Windows, macOS und Linux getestet.',
+    l1: 'Gesperrt', l1p: 'Dein Betriebssystem, Laufwerkswurzeln, Profilordner, Cloud-Ordner (OneDrive, Dropbox, iCloud…), SSH-Schlüssel und Ordner von Programmen, die gerade laufen.',
+    l2: 'Vorsicht', l2p: 'Programmordner, App-Daten, Steam-Spiele, alte Windows-Installationen auf anderen Platten. Löschbar – mit klarer Warnung auf der Karte.',
+    l3: 'Müll', l3p: 'Caches und Temp-Ordner werden geleert, nie entfernt – Apps erwarten, dass es sie gibt.',
+    p1: '🗑 Standardmäßig in den Papierkorb', p2: '🏠 Läuft nur auf 127.0.0.1', p3: '🔗 Folgt nie Verknüpfungen', p4: '📭 Keine Telemetrie, kein Konto', p5: '📖 MIT-Lizenz',
+    endTitle: 'Mal sehen, was deine <span class="g">Platte auffrisst.</span>', foot: 'Deutsch für „weg damit“ – nur per Wisch',
+  },
+};
+const EN = {};
+document.querySelectorAll('[data-t]').forEach(e => EN[e.dataset.t] = e.textContent);
+document.querySelectorAll('[data-t-html]').forEach(e => EN[e.dataset.tHtml] = e.innerHTML);
+T.en = EN;
+let lang = (navigator.language || 'en').startsWith('de') ? 'de' : 'en';
+try { lang = localStorage.getItem('ww-lang') || lang; } catch {}
+function setLang(l) {
+  lang = l; try { localStorage.setItem('ww-lang', l); } catch {}
+  document.documentElement.lang = l;
+  document.querySelectorAll('[data-t]').forEach(e => { const v = T[l][e.dataset.t]; if (v != null) e.textContent = v; });
+  document.querySelectorAll('[data-t-html]').forEach(e => { const v = T[l][e.dataset.tHtml]; if (v != null) e.innerHTML = v; });
+  document.getElementById('lang').textContent = l === 'en' ? 'DE' : 'EN';
+  deck.forEach((c, i) => c.ai && (c.aiText = c.ai[l]));
+  draw();
+}
+document.getElementById('lang').onclick = () => setLang(lang === 'en' ? 'de' : 'en');
+document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
+  try { await navigator.clipboard.writeText(b.dataset.copy); } catch {}
+  const o = b.textContent; b.textContent = '✓'; setTimeout(() => b.textContent = o, 1200);
+});
+
+// ---- self-playing card stack ----
+const deck = [
+  { ic: '🧹', nm: 'DXCache', p: 'C:\\Users\\alex\\AppData\\Local\\NVIDIA\\DXCache', sz: '59.9 GB', pct: 62, chips: [['j', 'Shader cache'], ['', '792 files']], move: 'l' },
+  { ic: '📁', nm: 'GoPro raw 2024', p: 'C:\\Users\\alex\\Videos\\GoPro raw 2024', sz: '48.2 GB', pct: 50, chips: [['', '1,312 files'], ['', '1 year old']], move: 'u',
+    ai: { en: '<b>CAREFUL</b> · Unedited GoPro clips. Delete only if the good shots are backed up.', de: '<b>VORSICHT</b> · Ungeschnittene GoPro-Clips. Nur löschen, wenn die guten Szenen gesichert sind.' } },
+  { ic: '📁', nm: 'Projects', p: 'C:\\Users\\alex\\Videos\\Projects', sz: '21.7 GB', pct: 23, chips: [['', '845 files'], ['', '20 days ago']], move: 'r' },
+  { ic: '📦', nm: 'game-v1.2.zip', p: 'C:\\Users\\alex\\Downloads\\game-v1.2.zip', sz: '9.5 GB', pct: 13, chips: [['j', 'Already unpacked next to it']], move: 'l' },
+  { ic: '🧹', nm: 'node_modules', p: 'C:\\Users\\alex\\source\\old-app\\node_modules', sz: '1.3 GB', pct: 4, chips: [['j', 'npm install brings it back'], ['w', '2 years untouched']], move: 'l' },
+];
+deck.forEach(c => c.ai && (c.aiText = c.ai[lang]));
+const stage = document.getElementById('stage');
+const stampTxt = { en: { l: 'DELETE', r: 'KEEP', u: 'ASK AI?' }, de: { l: 'LÖSCHEN', r: 'BEHALTEN', u: 'KI FRAGEN?' } };
+function cardHTML(c) {
+  return `<div class="stamp l">${stampTxt[lang].l}</div><div class="stamp r">${stampTxt[lang].r}</div><div class="stamp u">${stampTxt[lang].u}</div>
+    <div class="ic">${c.ic}</div><div class="nm">${c.nm}</div><div class="p mono">${c.p}</div>
+    <div class="sz">${c.sz}</div><div class="bar"><i style="width:${c.pct}%"></i></div>
+    ${c.chips.map(([k, t]) => `<span class="chip ${k}">${t}</span>`).join('')}
+    ${c.aiText ? `<div class="ai">✦ ${c.aiText}</div>` : ''}`;
+}
+function draw() {
+  stage.innerHTML = '';
+  deck.slice(0, 3).reverse().forEach((c, i, a) => {
+    const el = document.createElement('div');
+    const depth = a.length - 1 - i;
+    el.className = 'dcard' + (depth ? ' b' + depth : '');
+    el.innerHTML = cardHTML(c);
+    stage.appendChild(el);
+  });
+}
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const keyFor = { l: '.k1', u: '.k3', r: '.k4' };
+async function loop() {
+  draw();
+  if (reduced) return;
+  while (true) {
+    await sleep(1600);
+    const top = stage.lastElementChild, c = deck[0];
+    const key = document.querySelector(keyFor[c.move]);
+    key.classList.add('hit'); setTimeout(() => key.classList.remove('hit'), 350);
+    top.querySelector('.stamp.' + c.move).classList.add('on');
+    if (c.move === 'u') {
+      top.style.transform = 'translateY(-26px)'; await sleep(350); top.style.transform = '';
+      top.querySelector('.ai').classList.add('on'); await sleep(2300);
+      top.querySelector('.stamp.u').classList.remove('on'); await sleep(300);
+      c.move = 'l'; top.querySelector('.stamp.l').classList.add('on');
+      document.querySelector('.k1').classList.add('hit'); setTimeout(() => document.querySelector('.k1').classList.remove('hit'), 350);
+    }
+    await sleep(380);
+    const dx = c.move === 'r' ? 520 : -520;
+    top.style.transform = `translate(${dx}px,40px) rotate(${dx / 22}deg)`; top.style.opacity = 0;
+    await sleep(520);
+    deck.push(deck.shift());
+    if (deck[deck.length - 1].ai) deck[deck.length - 1].move = 'u';
+    draw();
+  }
+}
+setLang(lang);
+loop();
+</script>
+</body>
+</html>
