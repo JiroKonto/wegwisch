@@ -1,12 +1,12 @@
 {
-    "version": "0.2.2",
+    "version": "0.3.0",
     "description": "Tinder for your hard drive: swipe through what's eating your disk, biggest first.",
     "homepage": "https://jirokonto.github.io/wegwisch/",
     "license": "MIT",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/JiroKonto/wegwisch/releases/download/v0.2.2/wegwisch-windows-x64.exe#/wegwisch.exe",
-            "hash": "49f4c11665580ad61ec7e3578ad3302be60d969f2d17554c37911817eb9e8bdc"
+            "url": "https://github.com/JiroKonto/wegwisch/releases/download/v0.3.0/wegwisch-windows-x64.exe#/wegwisch.exe",
+            "hash": "b392a665e91ee3cbc8067f7000103b7dea14898cc48b76520643c004cb3066f7"
         }
     },
     "bin": "wegwisch.exe",
