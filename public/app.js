@@ -62,7 +62,8 @@ let cur = null;              // {path, items, waiting}
 let decided = new Set();
 let history = [];
 let order = [];
-let started = false, dragging = false, pollT = null;
+let started = false, dragging = false, pollT = null, advanced = false;
+const STACK = 5;
 const answers = new Map();
 const peeks = new Map();
 const canDelete = it => it.level !== 'locked' || it.contents;
@@ -159,8 +160,25 @@ function render() {
   $('#aAsk').hidden = !S.provider;
   $('#aSkip').hidden = mode === 'junk';
   deck.innerHTML = '';
-  if (rest[1]) deck.appendChild(cardEl(rest[1], true));
+  // visible stack behind the top card: up to STACK cards, thinning out as the folder empties
+  const backs = [];
+  for (let d = Math.min(rest.length - 1, STACK); d >= 1; d--) {
+    const b = cardEl(rest[d], true);
+    b.dataset.d = d; b.style.setProperty('--d', d);
+    deck.appendChild(b); backs.push(b);
+  }
   const el = cardEl(top, false); deck.appendChild(el); bindDrag(el);
+  $('#leftN').textContent = rest.length > 1 ? t('leftN', { n: num(rest.length) }) : '';
+  if (advanced) {
+    // slide every card one step forward: start one position further back, then animate in
+    backs.forEach(b => b.style.setProperty('--d', +b.dataset.d + 1));
+    el.classList.add('incoming');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      backs.forEach(b => b.style.setProperty('--d', b.dataset.d));
+      el.classList.add('anim'); el.classList.remove('incoming');
+    }));
+  }
+  advanced = false;
   loadPeek(top);
 }
 function cardEl(it, back) {
@@ -265,6 +283,7 @@ async function decide(dir) {
   if (dir === 'r' && it.isDir && mode === 'dir') { exploreQ.push(it.path); toast(t('laterToast', { n: it.name })); }
   if (dir === 'd') { api('/api/keep', { path: it.path }); toast(t('foreverToast', { n: it.name })); }
   history.push({ dir, it });
+  advanced = true;
   render();
 }
 async function ask(it) {
