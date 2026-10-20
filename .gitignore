@@ -1,0 +1,7 @@
+node_modules/
+keep.json
+settings.json
+stats.json
+*.log
+.DS_Store
+Thumbs.db

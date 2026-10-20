@@ -1,0 +1,45 @@
+{
+  "name": "wegwisch",
+  "version": "0.1.0",
+  "description": "Swipe through your disk like Tinder: left to delete, right to keep or look inside, up to ask an AI, down to keep forever.",
+  "bin": {
+    "wegwisch": "bin/wegwisch.js"
+  },
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node bin/wegwisch.js",
+    "test": "node --test test/*.test.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "public",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.15"
+  },
+  "keywords": [
+    "disk",
+    "cleanup",
+    "disk-space",
+    "swipe",
+    "storage",
+    "windows",
+    "macos",
+    "linux"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JiroKonto/wegwisch.git"
+  },
+  "homepage": "https://github.com/JiroKonto/wegwisch",
+  "bugs": {
+    "url": "https://github.com/JiroKonto/wegwisch/issues"
+  }
+}
