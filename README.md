@@ -6,7 +6,16 @@
 
 ← delete · → keep / look inside · ↑ ask an AI · ↓ never show again
 
-<img src="docs/card.png" width="440" alt="A Wegwisch card showing a 12.7 GB folder">
+[![CI](https://github.com/JiroKonto/wegwisch/actions/workflows/ci.yml/badge.svg)](https://github.com/JiroKonto/wegwisch/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/wegwisch?color=a78bfa)](https://www.npmjs.com/package/wegwisch)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2fd47a)](LICENSE)
+
+**[⬇ Download for Windows](https://github.com/JiroKonto/wegwisch/releases/latest/download/wegwisch-windows-x64.exe)** ·
+[macOS (Apple Silicon)](https://github.com/JiroKonto/wegwisch/releases/latest/download/wegwisch-macos-arm64) ·
+[Linux](https://github.com/JiroKonto/wegwisch/releases/latest/download/wegwisch-linux-x64) ·
+[Website](https://jirokonto.github.io/wegwisch/)
+
+<img src="docs/demo.gif" width="760" alt="Demo: swiping folders left and right, asking the AI, the block view, the delete pile and the result">
 
 </div>
 
@@ -18,13 +27,13 @@ Nothing is deleted while you swipe. Everything goes onto a **delete pile** that 
 
 *"Wegwisch" is German for "swipe it away".*
 
-| Classic mode | Junk radar | Delete pile |
+| Start | Classic with block view | Delete pile |
 |---|---|---|
-| <img src="docs/classic.png" alt="Classic mode: table of folders with size bars"> | <img src="docs/junk.png" alt="Junk radar card for a 59.9 GB shader cache"> | <img src="docs/pile.png" alt="Delete pile with four items"> |
+| <img src="docs/start.png" alt="Start screen: choose Swipe or Classic, smart decks below"> | <img src="docs/classic.png" alt="Classic mode: treemap of folders above a sortable list"> | <img src="docs/pile.png" alt="Delete pile with four items"> |
 
 ## Features
 
-- **Two modes**: *Swipe* (one card at a time) or *Classic*, an Explorer-style table with every size at once, size bars, sorting and a filter. Checkbox = onto the delete pile. Switch any time; you stay in the same folder.
+- **Two modes**: *Swipe* (one card at a time, with a stack of the next cards behind it) or *Classic*: a WinDirStat-style **block view** (treemap, two levels deep) above an Explorer-style list with sizes, bars, sorting and a filter. Checkbox = onto the delete pile. Switch any time; you stay in the same folder.
 - **Swipe or use the keyboard**: drag cards, or press `←` `→` `↑` `↓`, `Z` to undo, `S` to finish a folder.
 - **Folders first, then deeper**: swiping right on a folder queues its contents as the next deck.
 - **Fast parallel scanning**: a pool of worker threads (adjustable, 1–64) walks the disk. Folders you're looking at jump the queue. Sizes are the space *actually used on disk*, so sparse VM images and cloud placeholders don't show phantom gigabytes. Optionally scans all drives in the background.
@@ -35,6 +44,14 @@ Nothing is deleted while you swipe. Everything goes onto a **delete pile** that 
   - Steam shader caches
   - `X.zip` lying next to an already unpacked `X/`
   - old installers in Downloads
+- **Smart decks** on the start screen:
+  - **Big & old**: files over 500 MB nobody touched in a year
+  - **Duplicates**: identical big files (size, then sampled hash, then full SHA-1); pick the copy to keep
+  - **What grew**: folders that got bigger since your last visit (Wegwisch remembers folder sizes)
+  - **Programs**: installed apps by size; swiping left runs the program's *own uninstaller* instead of deleting folders (Windows; on macOS apps go to the Trash)
+  - **Windows extras**: hibernation file, component store cleanup, Delivery Optimization cache, restore points – each explained, admin actions go through Windows' own UAC prompt
+  - **Recycle Bin**: shows how much it holds and empties it (trashed files only free space once it's emptied)
+- **Drive overview** with the drive type (NVMe / SSD / HDD / USB), the model, and a **progress ring** showing how much of the drive has been scanned – click it to scan the whole drive.
 - **Ask an AI (optional)**: swipe up and you get a verdict (DELETE / KEEP / CAREFUL) with a two-sentence reason. Works with:
   - [Claude Code](https://claude.com/claude-code) if it's installed (uses your existing login)
   - an Anthropic API key
@@ -42,12 +59,16 @@ Nothing is deleted while you swipe. Everything goes onto a **delete pile** that 
 
   Without any of these, the up-swipe is simply hidden.
 - **Safety rules** (see below), tested for Windows, macOS and Linux.
-- **Stats and a share image**: "You freed up 93.8 GB" as a PNG to save or copy.
+- **Stats and a share image**: "You freed up 93.8 GB" – plus how long you spent and in which folder – as a PNG to save or copy.
 - **English and German**, easy to extend (`public/i18n.js`).
 
 ## Install & run
 
-Needs [Node.js](https://nodejs.org) 18.15 or newer.
+**Easiest:** download the single file for your system from the [latest release](https://github.com/JiroKonto/wegwisch/releases/latest) and run it – no installation, no Node.js needed.
+
+> The files aren't code-signed yet, so Windows SmartScreen shows "Windows protected your PC" → *More info* → *Run anyway*. On macOS: right-click → *Open*, or `xattr -d com.apple.quarantine wegwisch-macos-arm64`.
+
+**With Node.js** (18.15 or newer):
 
 ```bash
 npx wegwisch
@@ -102,7 +123,12 @@ src/protect.js       safety rules (pure, tested per OS)
 src/junk.js          junk radar: known caches + detectors fed by the scanner
 src/platform.js      drives, running programs, cloud folders, trash per OS
 src/ai.js            Claude Code CLI / Anthropic API / Ollama
-public/              the UI: plain HTML/CSS/JS, no build step
+src/finds.js         big & old, duplicates, growth snapshots
+src/programs.js      installed programs, uninstallers, Windows extras
+src/bin.js           Recycle Bin / Trash size and emptying
+src/bundle.js        runs from source or as a single executable
+scripts/build-exe.js builds the standalone executable (Node SEA)
+public/              the UI: plain HTML/CSS/JS, no build step (treemap.js = block view)
 ```
 
 ## Contributing

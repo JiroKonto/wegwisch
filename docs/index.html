@@ -51,7 +51,9 @@ h1{font-size:clamp(42px,6vw,72px);line-height:1.02;letter-spacing:-.045em;font-w
 .btn:hover{border-color:#4a5068}
 .btn.main{background:var(--text);color:#0c0d12;border-color:var(--text)}
 .btn.main:hover{filter:brightness(.92)}
-.meta{margin-top:18px;color:var(--dim);font-size:13.5px}
+.meta{margin-top:16px;color:var(--dim);font-size:13.5px}
+.meta a{color:var(--text)}
+.cmd.small{display:inline-flex;margin-top:14px;font-size:14px;padding:8px 10px 8px 14px}
 
 /* card stack demo */
 .stage{position:relative;height:500px;max-width:380px;width:100%;margin:0 auto}
@@ -83,6 +85,8 @@ section{padding:80px 0}
 h2{font-size:clamp(30px,4vw,44px);letter-spacing:-.035em;font-weight:800;line-height:1.1;margin-bottom:14px}
 .sub{color:var(--dim);font-size:17px;max-width:620px}
 
+.demo{padding:0 0 20px}
+.demo img{display:block;width:100%;max-width:900px;margin:0 auto;border-radius:20px;border:1px solid var(--line);box-shadow:0 40px 90px -40px #000}
 /* gestures */
 .gest{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
 .gest>div{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
@@ -144,16 +148,20 @@ footer .wrap{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
     <h1 data-t-html="h1">Tinder for your <span class="g">hard drive.</span></h1>
     <p class="lead" data-t="lead">Your disk is full and you don't know why. Wegwisch shows you the biggest things first, one card at a time. Swipe left to delete, right to keep or look inside, up to ask an AI what it even is.</p>
     <div class="cta">
-      <div class="cmd mono"><span>$</span> npx wegwisch <button data-copy="npx wegwisch" data-t="copy">Copy</button></div>
+      <a class="btn main" id="dl" href="https://github.com/JiroKonto/wegwisch/releases/latest"><span>⬇</span> <span id="dlText">Download</span></a>
       <a class="btn" href="https://github.com/JiroKonto/wegwisch">★ GitHub</a>
     </div>
-    <p class="meta" data-t="meta">Needs Node.js 18+. Runs only on your computer – nothing is uploaded.</p>
+    <p class="meta"><span data-t="meta">One file, no install. Runs only on your computer – nothing is uploaded.</span>
+      <span id="dlOther"></span></p>
+    <div class="cmd mono small"><span>$</span> npx wegwisch <button data-copy="npx wegwisch" data-t="copy">Copy</button></div>
   </div>
   <div>
     <div class="stage" id="stage" aria-hidden="true"></div>
     <div class="keys" aria-hidden="true"><span class="k1">✕</span><span class="k2">🔒</span><span class="k3">✦</span><span class="k4">✓</span></div>
   </div>
 </div></header>
+
+<section class="demo"><div class="wrap"><img src="demo.gif" alt="Wegwisch in action: swiping folders, asking the AI, the block view and the result" loading="lazy"></div></section>
 
 <section id="how"><div class="wrap">
   <h2 data-t="hTitle">Four gestures. That's the whole app.</h2>
@@ -170,19 +178,22 @@ footer .wrap{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
   <h2 data-t="fTitle">Small app, sharp tools.</h2>
   <div class="feat">
     <div><div class="e">🧹</div><h3 data-t="f1">Junk radar</h3><p data-t="f1p">Shader caches, temp files, browser & dev caches, crash dumps – plus node_modules, Unity Library and Unreal caches it finds while scanning.</p></div>
-    <div><div class="e">📊</div><h3 data-t="f2">Classic mode</h3><p data-t="f2p">Prefer a list? An Explorer-style table with every size at once, size bars, sorting and filter. Switch any time.</p></div>
+    <div><div class="e">📊</div><h3 data-t="f2">Classic mode with block view</h3><p data-t="f2p">Prefer an overview? A WinDirStat-style block map above an Explorer-style list with every size at once. Switch any time.</p></div>
     <div><div class="e">⚡</div><h3 data-t="f3">Fast, parallel scans</h3><p data-t="f3p">A pool of worker threads you can tune. Folders you're looking at jump the queue. Counts real disk usage – no phantom gigabytes from VM images.</p></div>
     <div><div class="e">✦</div><h3 data-t="f4">AI that's optional</h3><p data-t="f4p">Claude Code, an Anthropic API key or a local model via Ollama. No AI? The up-swipe just disappears.</p></div>
     <div><div class="e">👻</div><h3 data-t="f5">Finds forgotten stuff</h3><p data-t="f5p">Old Windows installs on second drives, zips next to their unpacked folder, installers rotting in Downloads.</p></div>
-    <div><div class="e">🏆</div><h3 data-t="f6">Brag about it</h3><p data-t="f6p">"You freed up 83 GB" – as a share image, plus all-time stats.</p></div>
+    <div><div class="e">🏆</div><h3 data-t="f6">Brag about it</h3><p data-t="f6p">"You freed up 83 GB" – as a share image, plus how long it took and all-time stats.</p></div>
+    <div><div class="e">👯</div><h3 data-t="f7">Duplicates, big & old</h3><p data-t="f7p">Identical files (verified by hash), files nobody touched in a year, and folders that grew since your last visit.</p></div>
+    <div><div class="e">📦</div><h3 data-t="f8">Uninstall properly</h3><p data-t="f8p">Installed programs by size – swiping left runs the program's own uninstaller instead of ripping out folders.</p></div>
+    <div><div class="e">🗑</div><h3 data-t="f9">Recycle Bin & Windows extras</h3><p data-t="f9p">See what's sitting in the Recycle Bin, empty it, and turn off the hibernation file or clean the update store – each explained.</p></div>
   </div>
 </div></section>
 
 <section style="padding-top:0"><div class="wrap">
   <div class="shots">
-    <figure><img src="classic.png" alt="Classic mode: table of folders with size bars" loading="lazy"><figcaption data-t="s1">Classic mode – all sizes at a glance</figcaption></figure>
+    <figure><img src="classic.png" alt="Classic mode: table of folders with size bars" loading="lazy"><figcaption data-t="s1">Classic mode – the block view shows at a glance what takes the space</figcaption></figure>
     <div class="side">
-      <figure><img src="junk.png" alt="Junk radar card: 59.9 GB shader cache" loading="lazy"><figcaption data-t="s2">Junk radar</figcaption></figure>
+      <figure><img src="start.png" alt="Start screen: Swipe or Classic, smart decks below" loading="lazy"><figcaption data-t="s2">Pick a mode – or a smart deck</figcaption></figure>
       <figure><img src="result.png" alt="Result: 123.6 GB freed" loading="lazy"><figcaption data-t="s3">The best screen</figcaption></figure>
     </div>
   </div>
@@ -203,7 +214,8 @@ footer .wrap{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
 
 <section class="final"><div class="wrap">
   <h2 data-t-html="endTitle">Let's see what's <span class="g">eating your disk.</span></h2>
-  <div class="cmd mono"><span>$</span> npx wegwisch <button data-copy="npx wegwisch" data-t="copy">Copy</button></div>
+  <a class="btn main" id="dl2" href="https://github.com/JiroKonto/wegwisch/releases/latest" style="margin-top:26px">⬇ <span id="dlText2">Download</span></a>
+  <p class="meta" style="margin-top:14px">or <span class="mono">npx wegwisch</span></p>
 </div></section>
 
 <footer><div class="wrap">
@@ -217,18 +229,21 @@ const T = {
     nHow: 'So geht’s', nSafe: 'Sicherheit', eyebrow: 'Kostenlos & Open Source · Windows · macOS · Linux',
     h1: 'Tinder für deine <span class="g">Festplatte.</span>',
     lead: 'Deine Platte ist voll und du weißt nicht warum. Wegwisch zeigt dir das Größte zuerst, eine Karte nach der anderen. Links wischen = löschen, rechts = behalten oder reinschauen, nach oben = die KI fragen, was das überhaupt ist.',
-    copy: 'Kopieren', meta: 'Braucht Node.js 18+. Läuft nur auf deinem Rechner – nichts wird hochgeladen.',
+    copy: 'Kopieren', meta: 'Eine Datei, keine Installation. Läuft nur auf deinem Rechner – nichts wird hochgeladen.',
     hTitle: 'Vier Gesten. Das ist die ganze App.', hSub: 'Beim Wischen wird nichts gelöscht – alles landet auf einem Löschstapel, den du am Ende prüfst, und standardmäßig im Papierkorb.',
     g1: 'Löschen', g1p: 'Auf den Löschstapel. Bestätigt wird alles am Ende.', g2: 'Behalten / reinschauen', g2p: 'Dateien bleiben. Ordner kommen in die Warteschlange – ihr Inhalt ist als Nächstes dran.',
     g3: 'KI fragen', g3p: '„Was ist das und kann das weg?“ – ein Urteil in zwei Sätzen.', g4: 'Nie wieder', g4p: 'Für immer gemerkt, wird nie wieder vorgeschlagen.',
     fTitle: 'Kleine App, scharfe Werkzeuge.',
     f1: 'Müll-Radar', f1p: 'Shader-Caches, Temp-Dateien, Browser- & Entwickler-Caches, Absturzberichte – plus node_modules, Unity-Library und Unreal-Caches, die es beim Scannen findet.',
-    f2: 'Klassischer Modus', f2p: 'Lieber eine Liste? Eine Tabelle wie im Explorer mit allen Größen, Balken, Sortierung und Filter. Jederzeit umschaltbar.',
+    f2: 'Klassisch mit Blockansicht', f2p: 'Lieber einen Überblick? Eine Blockkarte wie in WinDirStat über einer Liste wie im Explorer, mit allen Größen. Jederzeit umschaltbar.',
     f3: 'Schnelle, parallele Scans', f3p: 'Ein Pool aus Worker-Threads, den du einstellen kannst. Was du gerade ansiehst, wird zuerst gescannt. Zählt echten Platzverbrauch – keine Phantom-Gigabytes von VM-Images.',
     f4: 'KI ist optional', f4p: 'Claude Code, ein Anthropic-API-Key oder ein lokales Modell über Ollama. Keine KI? Dann verschwindet die Wisch-nach-oben-Geste einfach.',
     f5: 'Findet Vergessenes', f5p: 'Alte Windows-Installationen auf Zweitplatten, Zips neben ihrem entpackten Ordner, Installer, die in Downloads vergammeln.',
-    f6: 'Angeben erlaubt', f6p: '„Du hast 83 GB freigemacht“ – als Bild zum Teilen, plus Gesamtstatistik.',
-    s1: 'Klassischer Modus – alle Größen auf einen Blick', s2: 'Müll-Radar', s3: 'Der schönste Bildschirm',
+    f6: 'Angeben erlaubt', f6p: '„Du hast 83 GB freigemacht“ – als Bild zum Teilen, mit Zeit und Gesamtstatistik.',
+    f7: 'Duplikate, groß & alt', f7p: 'Identische Dateien (per Hash geprüft), Dateien, die seit einem Jahr keiner angefasst hat, und Ordner, die seit deinem letzten Besuch gewachsen sind.',
+    f8: 'Richtig deinstallieren', f8p: 'Installierte Programme nach Größe – nach links wischen startet den echten Deinstaller, statt Ordner herauszureißen.',
+    f9: 'Papierkorb & Windows-Extras', f9p: 'Sieh, was im Papierkorb liegt, leere ihn, und schalte die Ruhezustandsdatei ab oder räume den Update-Speicher auf – jeweils erklärt.',
+    s1: 'Klassischer Modus – die Blockansicht zeigt sofort, was den Platz frisst', s2: 'Modus wählen – oder ein schlaues Deck', s3: 'Der schönste Bildschirm',
     sTitle: 'Es löscht Dateien. Also ist es paranoid.', sSub: 'Jeder Pfad wird eingestuft, bevor du die Karte überhaupt siehst. Die Regeln sind für Windows, macOS und Linux getestet.',
     l1: 'Gesperrt', l1p: 'Dein Betriebssystem, Laufwerkswurzeln, Profilordner, Cloud-Ordner (OneDrive, Dropbox, iCloud…), SSH-Schlüssel und Ordner von Programmen, die gerade laufen.',
     l2: 'Vorsicht', l2p: 'Programmordner, App-Daten, Steam-Spiele, alte Windows-Installationen auf anderen Platten. Löschbar – mit klarer Warnung auf der Karte.',
@@ -250,7 +265,18 @@ function setLang(l) {
   document.querySelectorAll('[data-t-html]').forEach(e => { const v = T[l][e.dataset.tHtml]; if (v != null) e.innerHTML = v; });
   document.getElementById('lang').textContent = l === 'en' ? 'DE' : 'EN';
   deck.forEach((c, i) => c.ai && (c.aiText = c.ai[l]));
+  if (typeof dlLabel === 'function') dlLabel();
   draw();
+}
+const DL = 'https://github.com/JiroKonto/wegwisch/releases/latest/download/';
+const ua = navigator.userAgent, os = /Windows/i.test(ua) ? 'win' : /Mac/i.test(ua) ? 'mac' : /Linux/i.test(ua) && !/Android/i.test(ua) ? 'linux' : null;
+const files = { win: ['wegwisch-windows-x64.exe', 'Windows'], mac: ['wegwisch-macos-arm64', 'macOS'], linux: ['wegwisch-linux-x64', 'Linux'] };
+function dlLabel() {
+  const de = lang === 'de', name = os ? files[os][1] : '';
+  const txt = os ? (de ? 'Für ' + name + ' herunterladen' : 'Download for ' + name) : (de ? 'Herunterladen' : 'Download');
+  ['dl', 'dl2'].forEach(id => { const a = document.getElementById(id); if (os) a.href = DL + files[os][0]; });
+  document.getElementById('dlText').textContent = txt; document.getElementById('dlText2').textContent = txt;
+  document.getElementById('dlOther').innerHTML = (de ? 'Auch für ' : 'Also for ') + Object.entries(files).filter(([k]) => k !== os).map(([, [f, n]]) => `<a href="${DL + f}">${n}</a>`).join(' · ');
 }
 document.getElementById('lang').onclick = () => setLang(lang === 'en' ? 'de' : 'en');
 document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
