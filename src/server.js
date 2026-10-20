@@ -10,6 +10,8 @@ const scanner = require('./scanner');
 const junk = require('./junk');
 const ai = require('./ai');
 const bin = require('./bin');
+const finds = require('./finds');
+const programs = require('./programs');
 const { classify } = require('./protect');
 const pkg = require('../package.json');
 
@@ -52,6 +54,7 @@ function describe(p, isDir, st) {
     mtime: st.mtimeMs, level: prot.level, reason: prot.reason,
     junk: j ? j.kind : null, contents: !!(j && j.contents && isDir), cache: !!(j && j.cache),
     kept: keep.has(k),
+    grew: isDir ? finds.delta(p) : null,
   };
 }
 
@@ -72,6 +75,44 @@ async function listDir(dir) {
   }));
   const parent = path.dirname(dir);
   return { path: dir, parent: parent !== dir ? parent : null, items, waiting };
+}
+
+async function statOrNull(p) { try { return await fsp.lstat(p); } catch { return null; } }
+
+async function smartDeck(kind) {
+  const items = [];
+  if (kind === 'bigold') {
+    for (const f of finds.bigOld()) {
+      if (keep.has(scanner.key(f.path))) continue;
+      const st = await statOrNull(f.path); if (!st) continue;
+      items.push({ ...describe(f.path, false, st), lastUsed: Math.max(f.mtime, f.atime || 0) });
+    }
+  } else if (kind === 'growth') {
+    for (const g of finds.growth()) {
+      if (keep.has(scanner.key(g.path))) continue;
+      const st = await statOrNull(g.path); if (!st) continue;
+      items.push({ ...describe(g.path, true, st), size: g.size, grew: { delta: g.grew, since: g.since } });
+    }
+  } else if (kind === 'dupes') {
+    const d = finds.dupes();
+    for (const g of d.groups) {
+      const files = g.files.filter(f => !keep.has(scanner.key(f.path)));
+      if (files.length < 2) continue;
+      files.sort((a, b) => a.mtime - b.mtime);
+      items.push({ path: 'dupe:' + g.hash, name: path.basename(files[0].path), isDir: false, size: g.size * (files.length - 1), mtime: files[0].mtime, level: 'ok',
+        dupe: { each: g.size, sampled: g.sampled, files: files.map(f => ({ path: f.path, mtime: f.mtime, ...classify(f.path, ctx()) })) } });
+    }
+    return { items, waiting: 0, progress: { running: d.running, checked: d.checked, total: d.total, known: d.known } };
+  } else if (kind === 'programs') {
+    for (const p of await programs.programs()) {
+      if (keep.has('prog:' + p.id)) continue;
+      items.push({ path: p.mac ? p.location : 'prog:' + p.id, name: p.name, isDir: !!p.mac, size: p.size, mtime: p.installed || 0, level: 'ok', program: p });
+    }
+  } else if (kind === 'extras') {
+    for (const x of await programs.extras()) items.push({ path: 'extra:' + x.id, name: x.id, isDir: false, size: x.size, mtime: 0, level: 'ok', extra: x });
+  }
+  // programs without an install folder have no size at all, so only folder-based decks wait for sizes
+  return { items, waiting: kind === 'growth' || kind === 'bigold' ? items.filter(i => i.size == null).length : 0 };
 }
 
 async function peek(p) {
@@ -126,8 +167,28 @@ async function askAbout(p, lang) {
 }
 
 // ---------- delete ----------
+async function runSpecial(items, results) {
+  let freed = 0;
+  for (const it of items) {
+    const before = programs.freeOn(it.drive || (process.env.SystemDrive || 'C:') + '\\');
+    let r;
+    if (it.kind === 'uninstall') {
+      const known = (await programs.programs()).find(p => 'prog:' + p.id === it.path);
+      r = known ? await programs.uninstall(known.id) : { ok: false, error: 'unknown program' };
+      if (known?.location) { scanner.invalidate(known.location); it.drive = known.location; }
+    } else r = await programs.runExtra(String(it.path).replace(/^extra:/, ''));
+    const got = Math.max(0, programs.freeOn(it.drive || (process.env.SystemDrive || 'C:') + '\\') - before);
+    freed += got;
+    results.push({ path: it.path, ok: r.ok, size: got, permanent: true, error: r.ok ? null : r.error, opened: r.opened });
+  }
+  return freed;
+}
+
 async function remove(items) {
   const results = [];
+  const special = items.filter(i => i.kind === 'uninstall' || i.kind === 'extra');
+  items = items.filter(i => !special.includes(i));
+  const specialFreed = await runSpecial(special, results);
   const toTrash = [], toRm = [];
   const plan = new Map(); // child path -> parent item (for "empty folder" jobs)
   for (const it of items) {
@@ -152,10 +213,11 @@ async function remove(items) {
     if (!job) continue;
     if (o.ok) job.done++; else job.errors.push(o.error);
   }
-  let freed = 0, trashed = 0, n = 0;
+  let freed = specialFreed, trashed = 0, n = results.filter(r => r.ok).length;
   const final = results.map(r => {
     if (!('total' in r)) return r;
     scanner.invalidate(r.path);
+    if (r.done > 0) finds.drop(r.path);
     const ok = r.done > 0;
     // partial success for "empty folder" jobs: estimate by share of entries removed
     const got = r.done === r.total ? r.size : Math.round((r.size || 0) * r.done / Math.max(1, r.total));
@@ -241,6 +303,11 @@ function start({ port = 4747, open = true, threads } = {}) {
         case '/api/scan': return send(res, 200, scanner.progress());
         case '/api/peek': return send(res, 200, await peek(q));
         case '/api/tree': return send(res, 200, await tree(q));
+        case '/api/smart': {
+          const kind = url.searchParams.get('kind');
+          if (!['bigold', 'growth', 'dupes', 'programs', 'extras'].includes(kind)) return send(res, 400, { error: 'kind' });
+          return send(res, 200, { ...await smartDeck(kind), scan: scanner.progress(), history: finds.hasHistory() });
+        }
         case '/api/junk': {
           scanner.setFocus(null);
           const items = [];
@@ -257,7 +324,7 @@ function start({ port = 4747, open = true, threads } = {}) {
         case '/api/ask': { const b = await readBody(req); return send(res, 200, await askAbout(b.path, b.lang)); }
         case '/api/keep': {
           const b = await readBody(req);
-          const k = scanner.key(b.path);
+          const k = /^(prog|dupe|extra):/.test(b.path) ? b.path : scanner.key(b.path);
           if (b.undo) keep.delete(k); else keep.add(k);
           saveKeep();
           return send(res, 200, { ok: true });

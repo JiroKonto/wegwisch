@@ -4,11 +4,13 @@ const fs = require('fs');
 const path = require('path');
 
 const ARCHIVE = /\.(zip|rar|7z|tar|gz|tgz|xz)$/i;
+const BIG = 50 * 1024 * 1024; // files at least this big are reported individually
 
 parentPort.on('message', ({ id, dir }) => {
   let bytes = 0, files = 0, err = false, uproject = false;
   const dirs = [];
   const archives = [];
+  const big = []; // [name, onDiskSize, logicalSize, mtimeMs, atimeMs, ino]
   try {
     const d = fs.opendirSync(dir);
     let e;
@@ -23,6 +25,7 @@ parentPort.on('message', ({ id, dir }) => {
         const size = typeof st.blocks === 'number' ? st.blocks * 512 : st.size;
         bytes += size; files++;
         if (ARCHIVE.test(e.name)) archives.push([e.name, size]);
+        if (st.size >= BIG) big.push([e.name, size, st.size, st.mtimeMs, st.atimeMs, String(st.ino)]);
         if (!uproject && e.name.toLowerCase().endsWith('.uproject')) uproject = true;
       } catch {}
     }
@@ -31,5 +34,5 @@ parentPort.on('message', ({ id, dir }) => {
   // archive "X.zip" next to a folder "X" = probably already unpacked
   const lower = new Set(dirs.map(n => n.toLowerCase()));
   const dupArchives = archives.filter(([n]) => lower.has(n.replace(ARCHIVE, '').replace(/\.tar$/i, '').toLowerCase()));
-  parentPort.postMessage({ id, bytes, files, dirs, err, uproject, dupArchives });
+  parentPort.postMessage({ id, bytes, files, dirs, err, uproject, dupArchives, big });
 });

@@ -74,14 +74,14 @@ function makeNode(p, prio) {
   return n;
 }
 
-function onResult({ id, bytes, files, dirs, err, uproject, dupArchives }) {
+function onResult({ id, bytes, files, dirs, err, uproject, dupArchives, big }) {
   const n = inflight.get(id);
   inflight.delete(id);
   if (!n) return;
   stats.files += files; stats.bytes += bytes; stats.dirs++;
   const rk = rootOf(n.key); if (rk) perRoot.set(rk, (perRoot.get(rk) || 0) + bytes);
   n.size += bytes; n.files += files;
-  events.emit('dir', n.path, { dirs, uproject, dupArchives, err });
+  events.emit('dir', n.path, { dirs, uproject, dupArchives, err, big: big || [] });
   for (const name of dirs) {
     const cp = path.join(n.path, name);
     const ck = key(cp);
@@ -101,6 +101,7 @@ function finish(n) {
   const r = { size: n.size, files: n.files };
   sizes.set(n.key, r);
   nodes.delete(n.key);
+  events.emit('size', n.path, r);
   n.waiters.forEach(fn => fn(r));
   for (const p of n.parents) { p.size += n.size; p.files += n.files; p.pending--; finish(p); }
 }

@@ -10,7 +10,7 @@ const sepOf = p => /^[a-z]:[\\/]/i.test(p || '') ? '\\' : '/';
 function setViewMode(m) {
   viewMode = m;
   try { localStorage.setItem('viewMode', m); } catch {}
-  document.querySelectorAll('.mode').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  document.querySelectorAll('.modecard').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
 }
 function openFolder(p) { exploreQ = []; viewMode === 'classic' ? openClassic(p) : openDir(p); }
 
@@ -103,7 +103,7 @@ function renderClassic() {
     return `<div class="crow ${on ? 'picked' : ''}" data-p="${esc(it.path)}">
       <input type="checkbox" ${on ? 'checked' : ''} ${locked ? 'disabled' : ''} title="${esc(locked ? t('reason.' + it.reason) : t('del'))}">
       <span>${icon(it)}</span>
-      <div class="cname"><span class="n ${it.isDir ? 'dir' : ''}" title="${esc(it.name)}">${esc(it.name)}</span>${classicBadge(it)}</div>
+      <div class="cname"><span class="n ${it.isDir ? 'dir' : ''}" title="${esc(it.name)}">${esc(it.name)}</span>${classicBadge(it)}${it.grew && it.grew.delta >= 2 ** 28 ? `<span class="cbadge grow" title="${esc(t('grewSince', { s: fmt(it.grew.delta), d: new Date(it.grew.since).toLocaleDateString(lang) }))}">+${fmt(it.grew.delta)}</span>` : ''}</div>
       <div class="csize"><div class="bar"><i style="width:${it.size != null ? Math.max(1, it.size / max * 100) : 0}%${tmColor.has(it.path) ? ';background:' + tmColor.get(it.path) : ''}"></i></div><span class="${it.size == null ? 'unk' : ''}">${it.size == null ? '…' : fmt(it.size)}</span></div>
       <span class="cpct">${pct == null ? '' : pct < 1 ? '&lt;1' : Math.round(pct)}</span>
       <span class="cfiles">${it.isDir ? (it.files == null ? '…' : num(it.files)) : ''}</span>

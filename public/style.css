@@ -158,13 +158,6 @@ main{position:relative;height:calc(100% - 64px)}
   .hint{display:none} .freed{font-size:52px}
 }
 
-/* mode picker */
-.modepick{display:flex;gap:12px;margin-bottom:22px;width:100%;max-width:980px}
-.modepick button{flex:1;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 18px;transition:.15s}
-.modepick button b{display:block;font-size:16px;margin-bottom:2px}
-.modepick button span{color:var(--dim);font-size:13px}
-.modepick button:hover{border-color:#4a5068}
-.modepick button.on{border-color:var(--ask);background:color-mix(in srgb,var(--ask) 10%,var(--card))}
 
 /* classic */
 #classic{align-items:stretch;padding:4px 22px 20px;overflow:hidden}
@@ -214,11 +207,11 @@ main{position:relative;height:calc(100% - 64px)}
 .step{width:100%;max-width:980px;display:flex;flex-direction:column;align-items:center}
 .step[hidden]{display:none}
 .modes{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%}
-.mode{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px 26px 24px;text-align:left;transition:.18s;display:flex;flex-direction:column;gap:4px}
-.mode:hover{transform:translateY(-4px);border-color:#4a5068;box-shadow:0 24px 50px -24px #000c}
-.mode.on{border-color:color-mix(in srgb,var(--ask) 60%,var(--line))}
-.mode b{font-size:22px;letter-spacing:-.02em;margin-top:10px;color:var(--text);font-weight:800}
-.mode span{color:var(--dim);font-size:14px;font-weight:400}
+.modecard{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px 26px 24px;text-align:left;transition:.18s;display:flex;flex-direction:column;gap:4px}
+.modecard:hover{transform:translateY(-4px);border-color:#4a5068;box-shadow:0 24px 50px -24px #000c}
+.modecard.on{border-color:color-mix(in srgb,var(--ask) 60%,var(--line))}
+.modecard b{font-size:22px;letter-spacing:-.02em;margin-top:10px;color:var(--text);font-weight:800}
+.modecard span{color:var(--dim);font-size:14px;font-weight:400}
 .mart{height:150px;display:grid;place-items:center;background:radial-gradient(260px 120px at 50% 60%,#ffffff07,transparent);border-radius:16px}
 .mart svg{height:100%;width:auto;max-width:100%}
 .smartT{align-self:flex-start;font-size:15px;color:var(--dim);font-weight:600;margin:34px 0 12px}
@@ -263,3 +256,15 @@ main{position:relative;height:calc(100% - 64px)}
 .bincard .btn{font-size:13px;padding:8px 14px}
 .btn.armed{background:#b3123a;border-color:#ff4d6d;animation:pulse 1s infinite}
 .ftime{color:var(--text)!important}
+
+/* smart decks */
+.chip.grow,.cbadge.grow{color:#22d3ee;border-color:#22d3ee66}
+.xdesc{color:#c4c8d6;font-size:14px;margin-top:14px;line-height:1.5}
+.dupe{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}
+.dupe .dh{color:var(--dim);font-size:12px}
+.dupe label{display:flex;gap:8px;align-items:flex-start;font-size:12px;padding:6px 8px;border-radius:10px;background:#ffffff06;cursor:pointer}
+.dupe label:has(input:checked){background:color-mix(in srgb,var(--keep) 14%,transparent);outline:1px solid color-mix(in srgb,var(--keep) 45%,transparent)}
+.dupe label span{flex:1;word-break:break-all}
+.dupe label small{color:var(--dim);flex:none}
+.dupe label.locked{opacity:.6}
+.dupe input{accent-color:var(--keep);margin-top:2px}

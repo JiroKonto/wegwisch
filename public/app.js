@@ -38,6 +38,9 @@ function ago(ms) {
 }
 function icon(it) {
   if (it.junk) return '🧹';
+  if (it.dupe) return '👯';
+  if (it.program) return '📦';
+  if (it.extra) return '🛠';
   if (it.isDir) return '📁';
   const e = (it.name.split('.').pop() || '').toLowerCase();
   if (['mp4', 'mkv', 'avi', 'mov', 'webm'].includes(e)) return '🎬';
@@ -142,7 +145,15 @@ async function pollDrives() {
 }
 function chooseMode(m) { setViewMode(m); goStart(2); }
 // smart decks on the start screen; more get added here
-const SMART = [{ id: 'junk', icon: '🧹', title: 'junkTitle', sub: 'junkSub', open: () => openJunk() }];
+const SMART = [
+  { id: 'junk', icon: '🧹', title: 'junkTitle', sub: 'junkSub', open: () => openJunk() },
+  { id: 'bigold', icon: '🐘', title: 'smart.bigold.t', sub: 'smart.bigold.s', open: () => openSmart('bigold') },
+  { id: 'dupes', icon: '👯', title: 'smart.dupes.t', sub: 'smart.dupes.s', open: () => openSmart('dupes') },
+  { id: 'growth', icon: '📈', title: 'smart.growth.t', sub: 'smart.growth.s', open: () => openSmart('growth') },
+  { id: 'programs', icon: '📦', title: 'smart.programs.t', sub: 'smart.programs.s', open: () => openSmart('programs'), os: ['win32', 'darwin'] },
+  { id: 'extras', icon: '🛠', title: 'smart.extras.t', sub: 'smart.extras.s', open: () => openSmart('extras'), os: ['win32'] },
+];
+const realPath = p => !/^(dupe|prog|extra):/.test(p);
 let binInfo = null;
 // time spent cleaning, per folder; paused while the tab is hidden
 const timeT = { cur: null, since: 0, per: new Map(), total: 0 };
@@ -158,9 +169,9 @@ document.addEventListener('visibilitychange', () => {
 const fmtDur = ms => { const s = Math.round(ms / 1000), m = Math.floor(s / 60); return m ? `${m} min ${s % 60} s` : `${s} s`; };
 let lastFreed = 0;
 function renderSmart() {
-  $('#smartGrid').innerHTML = SMART.map(c => `<button class="junkcard" data-smart="${c.id}"><div class="big">${c.icon}</div><div><b>${t(c.title)}</b><span>${t(c.sub)}</span></div></button>`).join('')
+  $('#smartGrid').innerHTML = SMART.filter(c => !c.os || c.os.includes(S.platform)).map(c => `<button class="junkcard" data-smart="${c.id}"><div class="big">${c.icon}</div><div><b>${t(c.title)}</b><span>${t(c.sub)}</span></div></button>`).join('')
     + `<div class="junkcard bincard" id="binCard" hidden><div class="big">🗑</div><div><b>${t('binTitle')}</b><span id="binSub"></span></div><button class="btn primary" id="binBtn"></button></div>`;
-  SMART.forEach(c => $(`[data-smart="${c.id}"]`).onclick = c.open);
+  SMART.forEach(c => { const b = $(`[data-smart="${c.id}"]`); if (b) b.onclick = c.open; });
   wireBin($('#binBtn'), $('#binSub'), $('#binCard'));
 }
 // two-step "empty the recycle bin" button, used on the start screen and the result screen
@@ -198,11 +209,18 @@ async function openJunk() {
   await refresh();
   if (!S.settings.prescan) toast(t('junkScanHint'));
 }
+async function openSmart(kind) {
+  resetDeck(); mode = 'smart'; exploreQ = []; started = true;
+  cur = { path: null, kind, items: [], waiting: 1 };
+  $('#crumbs').textContent = t('smart.' + kind + '.t'); show('deckScreen'); trackFolder(t('smart.' + kind + '.t'));
+  await refresh();
+}
 async function refresh() {
   if (!cur) return;
   const mine = cur;
   let r;
-  try { r = await api(mode === 'junk' ? '/api/junk' : '/api/list?path=' + enc(cur.path)); } catch { r = { items: [], waiting: 0 }; }
+  try { r = await api(mode === 'junk' ? '/api/junk' : mode === 'smart' ? '/api/smart?kind=' + cur.kind : '/api/list?path=' + enc(cur.path)); } catch { r = { items: [], waiting: 0 }; }
+  if (mode === 'smart') { cur.progress = r.progress; cur.history = r.history; if (r.progress?.running) r.waiting = Math.max(r.waiting, 1); }
   if (cur !== mine) return;
   if (r.error) { toast('⚠ ' + r.error + ': ' + cur.path); return nextDir(); }
   const old = new Map(cur.items.map(i => [i.path, i]));
@@ -235,11 +253,21 @@ function render() {
     $('#startAnyway').onclick = () => { started = true; render(); };
     return;
   }
+  if (!rest.length && mode === 'smart' && !history.length) {
+    const why = cur.waiting ? t('smartWait', { c: num(cur.progress?.checked), n: num(cur.progress?.total) }) : t('smart.' + cur.kind + '.none') + (cur.kind === 'growth' && !cur.history ? ' ' + t('growthFirst') : '');
+    deck.innerHTML = `<div class="card"><div class="loading">${cur.waiting ? '<div class="spin"></div>' : '<div style="font-size:42px">🔍</div>'}<div style="color:var(--dim);max-width:300px">${why}</div>
+      <button class="btn" id="scanAllBtn">${t('scanAll')}</button></div></div>`;
+    $('#scanAllBtn').onclick = async () => { const ds = await api('/api/drives'); for (const d of ds) await api('/api/scan-drive', { path: d.path }); toast(t('scanAllStarted')); pollScan(); setTimeout(refresh, 3000); };
+    $('#leftN').textContent = '';
+    return;
+  }
   if (!rest.length) return nextDir();
   const top = rest[0];
   $('#keepLbl').textContent = top.isDir && mode === 'dir' ? t('look') : t('keep');
+  $('#aDel small').textContent = top.program && !top.program.mac ? t('uninstall') : top.extra ? t('runIt') : t('del');
   $('#aAsk').hidden = !S.provider;
-  $('#aSkip').hidden = mode === 'junk';
+  $('#aSkip').hidden = mode !== 'dir';
+  $('#aAsk').hidden = !S.provider || !realPath(top.path);
   deck.innerHTML = '';
   // visible stack behind the top card: up to STACK cards, thinning out as the folder empties
   const backs = [];
@@ -274,8 +302,8 @@ function cardEl(it, back) {
     <div class="stamp u">${t('stampAsk')}</div><div class="stamp d">${t('stampForever')}</div>
     <button class="rv" title="${esc(t('reveal'))}">↗</button>
     <div class="ic">${icon(it)}</div>
-    <div class="nm">${esc(it.name)}</div>
-    <div class="pth mono">${esc(it.path)}</div>
+    <div class="nm">${esc(it.extra ? t('extra.' + it.extra.id + '.t') : it.name)}</div>
+    <div class="pth mono">${esc(it.program ? [it.program.publisher, it.program.version].filter(Boolean).join(' · ') || it.program.location : it.extra ? '' : it.dupe ? t('dupeCopies', { n: it.dupe.files.length, s: fmt(it.dupe.each) }) : it.path)}</div>
     <div class="sz ${it.size == null ? 'unk' : ''}">${it.size == null ? t('sizeCalc') + '<span class="dots"></span>' : fmt(it.size)}</div>
     ${share != null ? `<div class="share">${t('ofFolder', { p: share })}</div><div class="bar"><i style="width:${share}%"></i></div>` : ''}
     <div class="chips">
@@ -283,14 +311,32 @@ function cardEl(it, back) {
       ${it.level === 'locked' && !it.contents ? `<span class="chip locked">🔒 ${esc(t('reason.' + it.reason))}</span>` : ''}
       ${it.level === 'caution' && !it.junk ? `<span class="chip caution">⚠ ${esc(t('reason.' + it.reason))}</span>` : ''}
       ${it.isDir && it.files != null ? `<span class="chip">📄 ${t('files', { n: num(it.files) })}</span>` : ''}
-      <span class="chip">🕒 ${t('modified', { ago: ago(it.mtime) })}</span>
+      ${it.grew && it.grew.delta > 0 ? `<span class="chip grow">📈 ${t('grewSince', { s: fmt(it.grew.delta), d: new Date(it.grew.since).toLocaleDateString(lang) })}</span>` : ''}
+      ${it.lastUsed ? `<span class="chip caution">💤 ${t('untouched', { ago: ago(it.lastUsed) })}</span>` : ''}
+      ${it.program ? `<span class="chip">🧩 ${it.program.mac ? t('progMac') : t('progUninstaller')}</span>` + (it.program.installed ? `<span class="chip">📅 ${t('installed', { d: new Date(it.program.installed).toLocaleDateString(lang) })}</span>` : '') : ''}
+      ${it.extra ? (it.extra.admin ? `<span class="chip caution">🛡 ${t('needsAdmin')}</span>` : '') + (it.extra.opens ? `<span class="chip">↗ ${t('opensSettings')}</span>` : '') : ''}
+      ${it.dupe?.sampled ? `<span class="chip caution">${t('dupeSampled')}</span>` : ''}
+      ${it.extra || it.program || it.dupe ? '' : `<span class="chip">🕒 ${t('modified', { ago: ago(it.mtime) })}</span>`}
     </div>
+    ${it.extra ? `<p class="xdesc">${esc(t('extra.' + it.extra.id + '.d'))}</p>` : ''}
+    ${it.dupe ? dupeList(it) : ''}
     ${ans !== undefined ? askBox(ans) : ''}
     <div class="peek"></div>`;
   const rv = el.querySelector('.rv');
-  rv.addEventListener('pointerdown', e => e.stopPropagation());
-  rv.onclick = () => api('/api/reveal', { path: it.path });
+  if (!realPath(it.path) && !it.program?.location) rv.remove();
+  else {
+    rv.addEventListener('pointerdown', e => e.stopPropagation());
+    rv.onclick = () => api('/api/reveal', { path: realPath(it.path) ? it.path : it.program.location });
+  }
+  el.querySelectorAll('.dupe input').forEach(r => { r.addEventListener('pointerdown', e => e.stopPropagation()); r.onchange = () => { dupeKeep.set(it.path, r.value); }; });
   return el;
+}
+// duplicate group: pick which copy survives (default: the oldest one)
+const dupeKeep = new Map();
+function dupeList(it) {
+  const keepP = dupeKeep.get(it.path) || it.dupe.files.find(f => f.level !== 'locked')?.path || it.dupe.files[0].path;
+  return `<div class="dupe"><div class="dh">${t('dupeKeepWhich')}</div>${it.dupe.files.map(f => `<label class="${f.level}"><input type="radio" name="k${esc(it.path)}" value="${esc(f.path)}" ${f.path === keepP ? 'checked' : ''}>
+    <span class="mono">${esc(f.path)}</span><small>${new Date(f.mtime).toLocaleDateString(lang)}</small></label>`).join('')}</div>`;
 }
 function askBox(a) {
   if (a === null) return `<div class="ask"><b>✦</b> ${t('thinking')}<span class="dots"></span></div>`;
@@ -301,6 +347,7 @@ function askBox(a) {
   return `<div class="ask ${v ? 'v-' + v : ''}"><b>✦ ${v ? t('verdict.' + v) : 'AI'}</b> · ${body}</div>`;
 }
 async function loadPeek(it) {
+  if (!realPath(it.path) || it.program) return;
   const fill = pk => {
     const el = document.querySelector(`.card:not(.back)[data-path="${CSS.escape(it.path)}"] .peek`);
     if (!el) return;
@@ -354,15 +401,24 @@ let busy = false;
 async function decide(dir) {
   const it = topItem();
   if (!it || !onScreen('deckScreen') || busy) return;
-  if (dir === 'u') { bounce(); return ask(it); }
+  if (dir === 'u') { bounce(); if (realPath(it.path)) ask(it); return; }
   if (dir === 'l' && !canDelete(it)) { bounce(); return toast(t('lockedToast', { r: t('reason.' + it.reason) })); }
   busy = true;
   await flyOut(dir);
   busy = false;
   decided.add(it.path); order.shift();
-  if (dir === 'l') { delQ.set(it.path, { ...it, permanent: permanentDefault(it) }); updateTray(); }
+  if (dir === 'l') {
+    if (it.dupe) {
+      const keepP = dupeKeep.get(it.path) || it.dupe.files.find(f => f.level !== 'locked')?.path;
+      it.added = it.dupe.files.filter(f => f.path !== keepP && f.level !== 'locked').map(f => f.path);
+      it.added.forEach(p => delQ.set(p, { path: p, name: p.split(/[\\/]/).pop(), isDir: false, size: it.dupe.each, level: 'ok', permanent: false }));
+    } else if (it.program && !it.program.mac) delQ.set(it.path, { ...it, kind: 'uninstall', permanent: true });
+    else if (it.extra) delQ.set(it.path, { ...it, kind: 'extra', permanent: true });
+    else delQ.set(it.path, { ...it, permanent: permanentDefault(it) });
+    updateTray();
+  }
   if (dir === 'r' && it.isDir && mode === 'dir') exploreQ.push(it.path);
-  if (dir === 'd') { api('/api/keep', { path: it.path }); toast(t('foreverToast', { n: it.name })); }
+  if (dir === 'd') { if (it.dupe) it.dupe.files.forEach(f => api('/api/keep', { path: f.path })); else api('/api/keep', { path: it.path }); toast(t('foreverToast', { n: it.extra ? t('extra.' + it.extra.id + '.t') : it.name })); }
   history.push({ dir, it });
   advanced = true;
   render();
@@ -378,9 +434,9 @@ function undo() {
   const h = history.pop();
   if (!h) return toast(t('nothingUndo'));
   decided.delete(h.it.path);
-  if (h.dir === 'l') { delQ.delete(h.it.path); updateTray(); }
+  if (h.dir === 'l') { delQ.delete(h.it.path); (h.it.added || []).forEach(p => delQ.delete(p)); updateTray(); }
   if (h.dir === 'r' && h.it.isDir) { const k = exploreQ.lastIndexOf(h.it.path); if (k >= 0) exploreQ.splice(k, 1); }
-  if (h.dir === 'd') api('/api/keep', { path: h.it.path, undo: true });
+  if (h.dir === 'd') (h.it.dupe ? h.it.dupe.files.map(f => f.path) : [h.it.path]).forEach(p => api('/api/keep', { path: p, undo: true }));
   order.unshift(h.it.path); render();
 }
 function skipFolder() { if (!cur || mode !== 'dir') return; toast(t('skipped')); nextDir(); }
@@ -397,7 +453,7 @@ document.addEventListener('keydown', e => {
   if ($('#settings').classList.contains('on')) { if (e.key === 'Escape') closeSettings(); return; }
   if (!onScreen('deckScreen') || e.target.closest?.('input,select')) return;
   const m = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd' }[e.key];
-  if (m) { e.preventDefault(); if (m !== 'u' || S.provider) decide(m); }
+  if (m) { e.preventDefault(); if (m !== 'u' || !$('#aAsk').hidden) decide(m); }
   else if (e.key === 'z' || e.key === 'Z' || e.key === 'Backspace') undo();
   else if (e.key === 's' || e.key === 'S') skipFolder();
 });
@@ -420,8 +476,9 @@ function renderReview() {
   $('#revSub').textContent = delQ.size ? t('pileSub', { n: delQ.size, s: fmt(s) }) : t('pileEmpty');
   const items = [...delQ.values()].sort((a, b) => (b.size || 0) - (a.size || 0));
   $('#rlist').innerHTML = items.map(i => `<div class="ritem ${i.level === 'caution' ? 'caution' : ''}">
-      <span>${icon(i)}</span><span class="p mono" title="${i.level === 'caution' ? esc(t('reason.' + i.reason)) : ''}">${esc(i.path)}</span>
-      <button class="mode ${i.permanent ? 'perm' : ''}" data-toggle="${esc(i.path)}" title="${esc(t('clickToggle'))}">${i.contents ? t('emptyOnly') + ' · ' : ''}${i.permanent ? '⚡ ' + t('permanent') : '🗑 ' + t('toTrash')}</button>
+      <span>${icon(i)}</span><span class="p mono" title="${i.level === 'caution' ? esc(t('reason.' + i.reason)) : ''}">${esc(i.extra ? t('extra.' + i.extra.id + '.t') : i.program ? i.name : i.path)}</span>
+      ${i.kind ? `<span class="mode perm">⚙ ${t(i.kind === 'uninstall' ? 'runsUninstaller' : i.extra?.opens ? 'opensSettings' : 'runsAction')}</span>`
+        : `<button class="mode ${i.permanent ? 'perm' : ''}" data-toggle="${esc(i.path)}" title="${esc(t('clickToggle'))}">${i.contents ? t('emptyOnly') + ' · ' : ''}${i.permanent ? '⚡ ' + t('permanent') : '🗑 ' + t('toTrash')}</button>`}
       <span class="s">${fmt(i.size)}</span><button class="x" data-rm="${esc(i.path)}">✕</button></div>`).join('');
   $('#rlist').querySelectorAll('[data-toggle]').forEach(b => b.onclick = () => { const i = delQ.get(b.dataset.toggle); i.permanent = !i.permanent; renderReview(); });
   $('#rlist').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { delQ.delete(b.dataset.rm); decided.delete(b.dataset.rm); updateTray(); renderReview(); });
@@ -430,7 +487,7 @@ function renderReview() {
 async function doDelete() {
   if (!delQ.size) return;
   const b = $('#doDelete'); b.disabled = true; b.textContent = t('working');
-  const items = [...delQ.values()].map(i => ({ path: i.path, permanent: i.permanent, contents: !!i.contents }));
+  const items = [...delQ.values()].map(i => ({ path: i.path, permanent: i.permanent, contents: !!i.contents, kind: i.kind }));
   let r;
   trackFolder(timeT.cur);
   const seconds = (timeT.total - (timeT.reported || 0)) / 1000; timeT.reported = timeT.total;
@@ -547,7 +604,7 @@ $('#aDel').onclick = () => decide('l'); $('#aKeep').onclick = () => decide('r');
 $('#aAsk').onclick = () => decide('u'); $('#aForever').onclick = () => decide('d');
 $('#doneOther').onclick = () => goStart(2);
 $('#backMode').onclick = () => goStart(1);
-document.querySelectorAll('.mode').forEach(b => b.onclick = () => chooseMode(b.dataset.mode)); $('#doneReview').onclick = openReview;
+document.querySelectorAll('.modecard').forEach(b => b.onclick = () => chooseMode(b.dataset.mode)); $('#doneReview').onclick = openReview;
 $('#revBack').onclick = backFromReview; $('#doDelete').onclick = doDelete;
 $('#saveImg').onclick = saveImg; $('#copyImg').onclick = copyImg;
 $('#resContinue').onclick = () => (reviewFrom === 'classic' && cls.path ? openClassic(cls.path) : cur ? (show('deckScreen'), render()) : goStart());
