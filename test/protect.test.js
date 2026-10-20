@@ -47,7 +47,7 @@ test('windows: program folders and old installs are caution, not locked', () => 
   assert.strictEqual(why('C:\\ProgramData\\Epic', win), 'programdata');
   assert.strictEqual(why('D:\\Windows', win), 'oldsys');
   assert.strictEqual(why('D:\\Program Files (x86)\\Steam', win), 'oldsys');
-  assert.strictEqual(why('D:\\Users\\Pain Train\\AppData', win), 'oldsys');
+  assert.strictEqual(why('D:\\Users\\alex\\AppData', win), 'oldsys');
   assert.strictEqual(why('C:\\Windows.old', win), 'oldsys');
   assert.strictEqual(why('F:\\SteamLibrary\\steamapps\\common\\Portal 2', win), 'steam');
 });
