@@ -283,3 +283,17 @@ main{position:relative;height:calc(100% - 64px)}
 .tile.dim{opacity:.55}
 .tile.armed{border-color:#ff4d6d;background:color-mix(in srgb,#ff4d6d 20%,var(--card));animation:pulse 1s infinite}
 @media (max-height:760px){ .tile .tt span{-webkit-line-clamp:1} .tile{padding:10px 14px} .tile .ta{width:44px;height:44px} .tile .ta svg{width:32px;height:32px} }
+
+/* fit on short screens (laptops): deck and result scale with the viewport height */
+.deck{min-height:300px}
+#shareCanvas{width:auto;height:clamp(130px,30vh,300px);max-width:90vw}
+.freed{font-size:clamp(44px,9vh,72px)}
+#result .center{gap:clamp(6px,1.6vh,14px)}
+@media (max-height:760px){
+  .hint{display:none}
+  .actions{margin-top:10px}
+  .act small{margin-top:3px}
+  .card{padding:20px}
+  .sz{font-size:36px;margin-top:8px}
+  .nm{font-size:21px}
+}
