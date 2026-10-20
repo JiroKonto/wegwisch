@@ -1,6 +1,6 @@
 {
   "name": "wegwisch",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Swipe through your disk like Tinder: left to delete, right to keep or look inside, up to ask an AI, down to keep forever.",
   "bin": {
     "wegwisch": "bin/wegwisch.js"

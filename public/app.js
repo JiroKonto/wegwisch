@@ -154,6 +154,7 @@ const SMART = [
   { id: 'programs', color: '#4ea8ff', title: 'smart.programs.t', sub: 'smart.programs.s', open: () => openSmart('programs'), os: ['win32', 'darwin'] },
   { id: 'extras', color: '#f472b6', title: 'smart.extras.t', sub: 'smart.extras.s', open: () => openSmart('extras'), os: ['win32'] },
   { id: 'bin', color: '#ff4d6d', title: 'binTitle', sub: 'binTile', open: () => binTileClick() },
+  { id: 'suggest', color: '#facc15', title: 'smart.suggest.t', sub: 'smart.suggest.s', open: () => openSmart('suggest') },
 ];
 const realPath = p => !/^(dupe|prog|extra):/.test(p);
 let binInfo = null;
@@ -310,6 +311,7 @@ function render() {
   }
   const el = cardEl(top, false); deck.appendChild(el); bindDrag(el);
   $('#leftN').textContent = rest.length > 1 ? t('leftN', { n: num(rest.length) }) : '';
+  updateBulk(rest);
   if (advanced) {
     // slide every card one step forward: start one position further back, then animate in
     backs.forEach(b => b.style.setProperty('--d', +b.dataset.d + 1));
@@ -339,7 +341,8 @@ function cardEl(it, back) {
     <div class="sz ${it.size == null ? 'unk' : ''}">${it.size == null ? t('sizeCalc') + '<span class="dots"></span>' : fmt(it.size)}</div>
     ${share != null ? `<div class="share">${t('ofFolder', { p: share })}</div><div class="bar"><i style="width:${share}%"></i></div>` : ''}
     <div class="chips">
-      ${it.junk ? `<span class="chip junk">🧹 ${esc(t('junk.' + it.junk))}</span>` : ''}
+      ${it.sugg ? `<span class="chip sugg ${it.sugg.level}">💡 ${esc(t('sugg.' + it.sugg.kind))} · ${t('conf.' + it.sugg.level)}</span>` : ''}
+      ${it.junk && !it.sugg ? `<span class="chip junk">🧹 ${esc(t('junk.' + it.junk))}</span>` : ''}
       ${it.level === 'locked' && !it.contents ? `<span class="chip locked">🔒 ${esc(t('reason.' + it.reason))}</span>` : ''}
       ${it.level === 'caution' && !it.junk ? `<span class="chip caution">⚠ ${esc(t('reason.' + it.reason))}</span>` : ''}
       ${it.isDir && it.files != null ? `<span class="chip">📄 ${t('files', { n: num(it.files) })}</span>` : ''}
@@ -455,6 +458,29 @@ async function decide(dir) {
   advanced = true;
   render();
 }
+// put every remaining "very safe" suggestion of this deck on the pile in one go
+const safeOnes = rest => rest.filter(i => i.sugg?.level === 'high' && canDelete(i) && !i.program && !i.extra);
+function updateBulk(rest) {
+  const b = $('#bulkBtn'), list = S.settings.suggest !== false || mode === 'smart' ? safeOnes(rest) : [];
+  b.hidden = list.length < 1;
+  if (!b.hidden) b.textContent = t('bulkSafe', { n: list.length, s: fmt(list.reduce((s, i) => s + (i.size || 0), 0)) });
+}
+$('#bulkBtn').onclick = () => {
+  const list = safeOnes(remaining()); if (!list.length) return;
+  const added = [];
+  for (const it of list) {
+    if (it.dupe) {
+      const keepP = dupeKeep.get(it.path) || it.dupe.files.find(f => f.level !== 'locked')?.path;
+      it.added = it.dupe.files.filter(f => f.path !== keepP && f.level !== 'locked').map(f => f.path);
+      it.added.forEach(p => { delQ.set(p, { path: p, name: p.split(/[\\/]/).pop(), isDir: false, size: it.dupe.each, level: 'ok', permanent: false }); added.push(p); });
+    } else { delQ.set(it.path, { ...it, permanent: permanentDefault(it) }); added.push(it.path); }
+    decided.add(it.path);
+  }
+  history.push({ dir: 'bulk', items: list, added });
+  order = order.filter(p => !decided.has(p));
+  updateTray(); toast(t('bulkDone', { n: list.length })); advanced = true; render();
+};
+
 async function ask(it) {
   if (answers.get(it.path) === null) return;
   answers.set(it.path, null); render();
@@ -465,6 +491,7 @@ async function ask(it) {
 function undo() {
   const h = history.pop();
   if (!h) return toast(t('nothingUndo'));
+  if (h.dir === 'bulk') { h.items.forEach(i => decided.delete(i.path)); h.added.forEach(p => delQ.delete(p)); updateTray(); render(); return; }
   decided.delete(h.it.path);
   if (h.dir === 'l') { delQ.delete(h.it.path); (h.it.added || []).forEach(p => delQ.delete(p)); updateTray(); }
   if (h.dir === 'r' && h.it.isDir) { const k = exploreQ.lastIndexOf(h.it.path); if (k >= 0) exploreQ.splice(k, 1); }
@@ -581,7 +608,7 @@ function openSettings() {
   const s = S.settings;
   $('#sThreads').max = Math.max(16, S.cpus * 2);
   $('#sThreads').value = s.threads; $('#thrVal').textContent = s.threads;
-  $('#sPrescan').checked = s.prescan; $('#sCache').checked = s.cachePermanent;
+  $('#sPrescan').checked = s.prescan; $('#sCache').checked = s.cachePermanent; $('#sSuggest').checked = s.suggest !== false;
   $('#sModel').value = s.model; $('#sLang').value = lang;
   $('#sKey').value = ''; $('#sKey').placeholder = s.hasApiKey ? t('apiKeySet') : 'sk-ant-…';
   $('#keyHint').textContent = t('apiKeyHint', { d: S.dataDir });
@@ -603,7 +630,7 @@ function syncAiFields() {
 }
 function closeSettings() { $('#settings').classList.remove('on'); }
 async function saveSettings() {
-  const body = { threads: +$('#sThreads').value, prescan: $('#sPrescan').checked, cachePermanent: $('#sCache').checked,
+  const body = { threads: +$('#sThreads').value, prescan: $('#sPrescan').checked, cachePermanent: $('#sCache').checked, suggest: $('#sSuggest').checked,
     ai: $('#sAi').value, model: $('#sModel').value, ollamaModel: $('#sOllama').value };
   if ($('#sKey').value.trim()) body.apiKey = $('#sKey').value.trim();
   S = await api('/api/settings', body);

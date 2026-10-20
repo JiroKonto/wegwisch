@@ -64,7 +64,7 @@
 
   <section class="screen" id="deckScreen">
     <div class="deck" id="deck"></div>
-    <div class="left" id="leftN"></div>
+    <div class="left"><span id="leftN"></span><button class="bulk" id="bulkBtn" hidden></button></div>
     <div class="actions">
       <button class="act small" id="aUndo">↶</button>
       <button class="act del big" id="aDel">✕<small data-t="del"></small></button>
@@ -130,6 +130,7 @@
     <div class="field" id="fKey"><label><span data-t="apiKey"></span></label>
       <input type="password" id="sKey" autocomplete="off" spellcheck="false"><div class="h" id="keyHint"></div></div>
     <div class="field" id="fOllama"><label><span data-t="ollamaModel"></span></label><select id="sOllama"></select></div>
+    <div class="field"><label class="check"><input type="checkbox" id="sSuggest"><span><span data-t="suggSetting"></span><div class="h" data-t="suggSettingHint" style="font-weight:400"></div></span></label></div>
     <div class="field"><label class="check"><input type="checkbox" id="sCache"><span><span data-t="cachePerm"></span><div class="h" data-t="cachePermHint" style="font-weight:400"></div></span></label></div>
     <div class="field"><label><span data-t="language"></span></label>
       <select id="sLang"><option value="en">English</option><option value="de">Deutsch</option></select></div>

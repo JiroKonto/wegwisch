@@ -89,8 +89,9 @@ async function findDupes() {
   } finally { job.running = false; }
 }
 
-function dupes() {
-  if (!job.running) findDupes();
+// start=false: only report what's already known (used for badges while browsing)
+function dupes({ start = true } = {}) {
+  if (start && !job.running) findDupes();
   const groups = [...dupeGroups.values()].map(g => ({ ...g, files: g.files.filter(f => fs.existsSync(f.path)) })).filter(g => g.files.length > 1);
   return { groups: groups.sort((a, b) => b.size * (b.files.length - 1) - a.size * (a.files.length - 1)), running: job.running, checked: job.checked, total: job.total, known: big.size };
 }

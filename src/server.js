@@ -12,6 +12,7 @@ const ai = require('./ai');
 const bin = require('./bin');
 const finds = require('./finds');
 const programs = require('./programs');
+const suggest = require('./suggest');
 const { classify } = require('./protect');
 const pkg = require('../package.json');
 
@@ -55,6 +56,7 @@ function describe(p, isDir, st) {
     junk: j ? j.kind : null, contents: !!(j && j.contents && isDir), cache: !!(j && j.cache),
     kept: keep.has(k),
     grew: isDir ? finds.delta(p) : null,
+    sugg: settings.suggest !== false ? suggest.match(p) : null,
   };
 }
 
@@ -108,6 +110,23 @@ async function smartDeck(kind) {
       if (keep.has('prog:' + p.id)) continue;
       items.push({ path: p.mac ? p.location : 'prog:' + p.id, name: p.name, isDir: !!p.mac, size: p.size, mtime: p.installed || 0, level: 'ok', program: p });
     }
+  } else if (kind === 'suggest') {
+    for (const c of suggest.list({ startDupes: true }).slice(0, 300)) {
+      if (c.group) {
+        const files = c.group.files.filter(f => !keep.has(scanner.key(f.path)));
+        if (files.length < 2) continue;
+        files.sort((a, b) => a.mtime - b.mtime);
+        items.push({ path: c.path, name: path.basename(files[0].path), isDir: false, size: c.size, mtime: files[0].mtime, level: 'ok', sugg: { kind: 'dupe', level: c.level },
+          dupe: { each: c.group.size, sampled: c.group.sampled, files: files.map(f => ({ path: f.path, mtime: f.mtime, ...classify(f.path, ctx()) })) } });
+        continue;
+      }
+      if (keep.has(scanner.key(c.path))) continue;
+      const st = await statOrNull(c.path); if (!st) continue;
+      const it = describe(c.path, st.isDirectory(), st);
+      if (it.isDir && it.size == null) { if (c.size != null) it.size = c.size; else scanner.request(c.path, false); }
+      items.push({ ...it, sugg: { kind: c.kind, level: c.level }, contents: !!c.contents, cache: !!c.cache, junk: c.kind === 'bigold' ? null : it.junk });
+    }
+    return { items, waiting: 0 };
   } else if (kind === 'extras') {
     for (const x of await programs.extras()) items.push({ path: 'extra:' + x.id, name: x.id, isDir: false, size: x.size, mtime: 0, level: 'ok', extra: x });
   }
@@ -231,6 +250,7 @@ async function remove(items) {
     saveStats();
   }
   drivesCache = platform.drives();
+  suggest.invalidate();
   return { results: final, freed, trashed, stats };
 }
 
@@ -305,7 +325,7 @@ function start({ port = 4747, open = true, threads } = {}) {
         case '/api/tree': return send(res, 200, await tree(q));
         case '/api/smart': {
           const kind = url.searchParams.get('kind');
-          if (!['bigold', 'growth', 'dupes', 'programs', 'extras'].includes(kind)) return send(res, 400, { error: 'kind' });
+          if (!['bigold', 'growth', 'dupes', 'programs', 'extras', 'suggest'].includes(kind)) return send(res, 400, { error: 'kind' });
           return send(res, 200, { ...await smartDeck(kind), scan: scanner.progress(), history: finds.hasHistory() });
         }
         case '/api/junk': {

@@ -64,6 +64,7 @@ function sortedClassic() {
 }
 
 function classicBadge(it) {
+  if (it.sugg) return `<span class="cbadge sugg ${it.sugg.level}" title="${esc(t('sugg.' + it.sugg.kind) + ' · ' + t('conf.' + it.sugg.level))}">💡</span>`;
   if (it.junk) return `<span class="cbadge junk" title="${esc(t('junk.' + it.junk))}">🧹</span>`;
   if (it.level === 'locked') return `<span class="cbadge locked" title="${esc(t('reason.' + it.reason))}">🔒</span>`;
   if (it.level === 'caution') return `<span class="cbadge caution" title="${esc(t('reason.' + it.reason))}">⚠</span>`;
@@ -89,7 +90,13 @@ function renderClassic() {
   cls.items.forEach(i => { if (delQ.has(i.path)) picked += i.size || 0; });
   $('#cInfo').innerHTML = `<span><b>${fmt(total)}</b> · ${t('cEntries', { n: num(cls.items.length) })} · ${t('files', { n: num(files) })}</span>` +
     (cls.waiting ? `<span>⏳ ${t('calcProgress', { done: dirs - cls.waiting, n: dirs })}</span>` : '') +
-    (picked ? `<span style="color:var(--del)">🗑 ${t('cPicked', { s: fmt(picked) })}</span>` : '');
+    (picked ? `<span style="color:var(--del)">🗑 ${t('cPicked', { s: fmt(picked) })}</span>` : '') +
+    (() => { const safe = S.settings.suggest !== false ? cls.items.filter(i => i.sugg?.level === 'high' && canDelete(i) && !delQ.has(i.path)) : [];
+      return safe.length ? `<button class="bulk" id="cBulk">${t('bulkSafe', { n: safe.length, s: fmt(safe.reduce((s, i) => s + (i.size || 0), 0)) })}</button>` : ''; })();
+  if ($('#cBulk')) $('#cBulk').onclick = () => {
+    cls.items.filter(i => i.sugg?.level === 'high' && canDelete(i)).forEach(i => delQ.set(i.path, { ...i, permanent: permanentDefault(i) }));
+    updateTray(); renderClassic(); markMap();
+  };
 
   const list = sortedClassic();
   if (!list.length) {

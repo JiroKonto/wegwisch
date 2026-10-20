@@ -24,6 +24,10 @@ Object.assign(ART, {
     <rect x="8" y="28" width="17" height="17" rx="2" opacity=".6"/><rect x="28" y="28" width="17" height="17" rx="2" opacity=".35"/></g>
     <circle cx="46" cy="46" r="11" fill="#14161e" stroke="currentColor" stroke-width="2.5"/><circle cx="46" cy="46" r="4" fill="none" stroke="currentColor" stroke-width="2.5"/>
     <path d="M46 31v4M46 57v4M31 46h4M57 46h4M35.4 35.4l2.8 2.8M53.8 53.8l2.8 2.8M35.4 56.6l2.8-2.8M53.8 38.2l2.8-2.8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+  suggest: `<svg viewBox="0 0 64 64" class="art"><path d="M32 8 C20 8 13 17 13 26 C13 33 17 37 21 41 C23 43 24 45 24 48 H40 C40 45 41 43 43 41 C47 37 51 33 51 26 C51 17 44 8 32 8 Z" fill="#1f2330" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M25 52 H39 M27 57 H37" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <path d="M26 30 L30 34 L39 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32 1v3M8 26H5M59 26h-3M14 9l2 2M50 9l-2 2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".6"/></svg>`,
   bin: `<svg viewBox="0 0 64 64" class="art"><path d="M14 18 H50 L46 56 H18 Z" fill="#1f2330" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
     <path d="M10 18 H54" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M26 18 V12 H38 V18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
     <path d="M26 27 L27 48 M32 27 V48 M38 27 L37 48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".6"/></svg>`,

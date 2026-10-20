@@ -45,6 +45,7 @@ Nothing is deleted while you swipe. Everything goes onto a **delete pile** that 
   - `X.zip` lying next to an already unpacked `X/`
   - old installers in Downloads
 - **Smart decks** on the start screen:
+  - **Suggestions**: the best delete candidates from every source, ranked by how safe they are (very safe / probably safe / check first) and how much they free. One button puts all *very safe* ones on the delete pile – in this deck, while swiping, and per folder in Classic. While browsing, suggested items get a 💡 badge (can be turned off in the settings).
   - **Big & old**: files over 500 MB nobody touched in a year
   - **Duplicates**: identical big files (size, then sampled hash, then full SHA-1); pick the copy to keep
   - **What grew**: folders that got bigger since your last visit (Wegwisch remembers folder sizes)

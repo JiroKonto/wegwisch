@@ -31,6 +31,7 @@ const DEFAULTS = {
   ollamaModel: '',
   apiKey: '',
   cachePermanent: true,    // caches skip the trash (trashing them frees nothing)
+  suggest: true,           // 💡 badges and "all very safe" buttons while browsing
 };
 const SETTING_KEYS = Object.keys(DEFAULTS);
 
