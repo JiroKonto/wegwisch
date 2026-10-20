@@ -3,7 +3,9 @@
 
 let viewMode = 'swipe';
 try { viewMode = localStorage.getItem('viewMode') || 'swipe'; } catch {}
-const cls = { path: null, parent: null, items: [], waiting: 0, sort: 'size', dir: -1, filter: '', limit: 300, timer: null };
+const cls = { path: null, parent: null, items: [], waiting: 0, sort: 'size', dir: -1, filter: '', limit: 300, timer: null, tree: null, treeAt: 0, showMap: true };
+try { cls.showMap = localStorage.getItem('cMap') !== '0'; } catch {}
+const sepOf = p => /^[a-z]:[\\/]/i.test(p || '') ? '\\' : '/';
 
 function setViewMode(m) {
   viewMode = m;
@@ -14,7 +16,8 @@ function openFolder(p) { exploreQ = []; viewMode === 'classic' ? openClassic(p) 
 
 async function openClassic(p) {
   clearTimeout(cls.timer); clearTimeout(pollT); cur = null; mode = 'dir';
-  Object.assign(cls, { path: p, parent: null, items: [], waiting: 1, filter: '', limit: 300 });
+  Object.assign(cls, { path: p, parent: null, items: [], waiting: 1, filter: '', limit: 300, tree: null, treeAt: 0 });
+  $('#cMap').innerHTML = '';
   $('#cFilter').value = '';
   $('#crumbs').textContent = ''; show('classic'); updateModeBtn();
   renderClassic();
@@ -29,7 +32,11 @@ async function refreshClassic() {
   if (r.error) { toast('⚠ ' + r.error + ': ' + p); return cls.parent ? openClassic(cls.parent) : goStart(); }
   cls.items = r.items; cls.parent = r.parent; cls.waiting = r.waiting;
   renderClassic();
-  if (r.waiting > 0) cls.timer = setTimeout(refreshClassic, 1200);
+  if (cls.showMap && (!r.waiting || Date.now() - cls.treeAt > 2500)) {
+    cls.treeAt = Date.now();
+    try { const tr = await api('/api/tree?path=' + enc(p)); if (cls.path === p && !tr.error) { cls.tree = tr; renderMap(); renderClassic(); } } catch {}
+  }
+  if (r.waiting > 0 && cls.path === p) cls.timer = setTimeout(refreshClassic, 1200);
 }
 
 // "C:\Users\alex" -> [["C:", "C:\"], ["Users", "C:\Users"], ["alex", "C:\Users\alex"]]
@@ -97,7 +104,7 @@ function renderClassic() {
       <input type="checkbox" ${on ? 'checked' : ''} ${locked ? 'disabled' : ''} title="${esc(locked ? t('reason.' + it.reason) : t('del'))}">
       <span>${icon(it)}</span>
       <div class="cname"><span class="n ${it.isDir ? 'dir' : ''}" title="${esc(it.name)}">${esc(it.name)}</span>${classicBadge(it)}</div>
-      <div class="csize"><div class="bar"><i style="width:${it.size != null ? Math.max(1, it.size / max * 100) : 0}%"></i></div><span class="${it.size == null ? 'unk' : ''}">${it.size == null ? '…' : fmt(it.size)}</span></div>
+      <div class="csize"><div class="bar"><i style="width:${it.size != null ? Math.max(1, it.size / max * 100) : 0}%${tmColor.has(it.path) ? ';background:' + tmColor.get(it.path) : ''}"></i></div><span class="${it.size == null ? 'unk' : ''}">${it.size == null ? '…' : fmt(it.size)}</span></div>
       <span class="cpct">${pct == null ? '' : pct < 1 ? '&lt;1' : Math.round(pct)}</span>
       <span class="cfiles">${it.isDir ? (it.files == null ? '…' : num(it.files)) : ''}</span>
       <span class="cdate">${new Date(it.mtime).toLocaleDateString(lang)}</span>
@@ -119,7 +126,7 @@ $('#cRows').addEventListener('click', async e => {
   const it = cls.items.find(i => i.path === row.dataset.p); if (!it) return;
   if (e.target.matches('input[type=checkbox]')) {
     if (e.target.checked) delQ.set(it.path, { ...it, permanent: permanentDefault(it) }); else delQ.delete(it.path);
-    updateTray(); renderClassic(); return;
+    updateTray(); renderClassic(); markMap(); return;
   }
   const a = e.target.closest('[data-a]')?.dataset.a;
   if (a === 'reveal') return api('/api/reveal', { path: it.path });
@@ -165,3 +172,32 @@ $('#modeBtn').onclick = () => {
   else if (cur && mode === 'dir') { setViewMode('classic'); openClassic(cur.path); }
 };
 setViewMode(viewMode);
+
+// ---------- block view ----------
+function renderMap() {
+  const el = $('#cMap');
+  el.hidden = !cls.showMap;
+  $('#cMapBtn').classList.toggle('on', cls.showMap);
+  $('#cMapBtn').title = t('mapToggle');
+  if (!cls.showMap || !onScreen('classic')) return;
+  drawTreemap(el, cls.tree, { onOpen: p => openClassic(p), onPick: flashRow, isPicked: p => delQ.has(p), sep: sepOf(cls.path) });
+}
+function markMap() { document.querySelectorAll('#cMap .tm-box[data-p]').forEach(b => b.classList.toggle('picked', delQ.has(b.dataset.p))); }
+function flashRow(p) {
+  const row = [...document.querySelectorAll('#cRows .crow')].find(r => r.dataset.p === p); if (!row) return;
+  row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+}
+$('#cMapBtn').onclick = () => {
+  cls.showMap = !cls.showMap;
+  try { localStorage.setItem('cMap', cls.showMap ? '1' : '0'); } catch {}
+  if (cls.showMap && !cls.tree) refreshClassic(); else renderMap();
+};
+// hover links block <-> row
+const hl = (sel, p, on) => document.querySelectorAll(sel).forEach(e => e.classList.toggle('hl', on && e.dataset.p === p));
+$('#cRows').addEventListener('mouseover', e => { const r = e.target.closest('.crow'); hl('#cMap .tm-box', r?.dataset.p, !!r); });
+$('#cRows').addEventListener('mouseleave', () => hl('#cMap .tm-box', null, false));
+$('#cMap').addEventListener('mouseover', e => { const b = e.target.closest('.tm-box'); hl('#cRows .crow', b?.dataset.p, !!b); });
+$('#cMap').addEventListener('mouseleave', () => hl('#cRows .crow', null, false));
+let mapRz;
+new ResizeObserver(() => { clearTimeout(mapRz); mapRz = setTimeout(renderMap, 120); }).observe($('#cMap'));

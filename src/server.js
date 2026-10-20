@@ -84,6 +84,30 @@ async function peek(p) {
   return { total: ents.length, children: children.slice(0, 8) };
 }
 
+// Treemap data: the folder's entries plus, for the biggest folders, their own biggest entries.
+async function tree(dir) {
+  const entry = async (fp, e) => {
+    if (e.isSymbolicLink() || keep.has(scanner.key(fp))) return null;
+    if (e.isDirectory()) { const s = scanner.get(fp); return { name: e.name, path: fp, isDir: true, size: s ? s.size : null }; }
+    try { return { name: e.name, path: fp, isDir: false, size: onDisk(await fsp.lstat(fp)) }; } catch { return null; }
+  };
+  const ents = await fsp.readdir(dir, { withFileTypes: true });
+  const kids = (await Promise.all(ents.slice(0, 3000).map(e => entry(path.join(dir, e.name), e)))).filter(Boolean);
+  kids.sort((a, b) => (b.size ?? -1) - (a.size ?? -1));
+  const top = kids.slice(0, 80);
+  await Promise.all(top.filter(k => k.isDir && k.size > 0).slice(0, 30).map(async k => {
+    let sub = []; try { sub = await fsp.readdir(k.path, { withFileTypes: true }); } catch { return; }
+    const list = (await Promise.all(sub.slice(0, 400).map(e => entry(path.join(k.path, e.name), e))))
+      .filter(c => c && c.size > 0).sort((a, b) => b.size - a.size);
+    k.children = list.slice(0, 30).map(({ name, isDir, size }) => ({ name, isDir, size }));
+    const shown = k.children.reduce((s, c) => s + c.size, 0);
+    if (k.size - shown > 0) k.children.push({ name: '…', other: true, size: k.size - shown });
+  }));
+  const rest = kids.slice(80).reduce((s, k) => s + (k.size || 0), 0);
+  if (rest > 0) top.push({ name: '…', other: true, size: rest });
+  return { path: dir, items: top };
+}
+
 function fmt(b) { if (b == null) return '?'; const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0; while (b >= 1024 && i < 4) { b /= 1024; i++; } return b.toFixed(i ? 1 : 0) + ' ' + u[i]; }
 
 async function askAbout(p, lang) {
@@ -205,6 +229,7 @@ function start({ port = 4747, open = true, threads } = {}) {
         case '/api/list': return send(res, 200, { ...await listDir(q), scan: scanner.progress() });
         case '/api/scan': return send(res, 200, scanner.progress());
         case '/api/peek': return send(res, 200, await peek(q));
+        case '/api/tree': return send(res, 200, await tree(q));
         case '/api/junk': {
           scanner.setFocus(null);
           const items = [];
