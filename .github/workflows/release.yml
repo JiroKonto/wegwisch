@@ -46,3 +46,23 @@ jobs:
         with:
           files: dist/*
           generate_release_notes: true
+
+  npm:
+    # Trusted publishing: npm accepts this workflow via OIDC, no token stored anywhere.
+    # One-time setup on npmjs.com: package settings -> Trusted Publisher -> GitHub Actions,
+    # repository JiroKonto/wegwisch, workflow release.yml.
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm publish --access public --provenance

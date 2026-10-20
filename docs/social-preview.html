@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;box-sizing:border-box}
+html,body{width:1280px;height:640px;overflow:hidden;background:#0c0d12;font-family:Inter,sans-serif;color:#eef0f6}
+.bg{position:absolute;inset:0;background:radial-gradient(520px 360px at 18% 20%,#ff4d6d26,transparent 70%),radial-gradient(520px 380px at 78% 18%,#a78bfa2e,transparent 70%),radial-gradient(520px 300px at 62% 92%,#2fd47a1f,transparent 70%)}
+.grid{position:absolute;inset:0;background-image:linear-gradient(#ffffff06 1px,transparent 1px),linear-gradient(90deg,#ffffff06 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(800px 500px at 50% 50%,#000,transparent)}
+.left{position:absolute;left:80px;top:96px;width:600px}
+.logo{font-size:96px;font-weight:900;letter-spacing:-.05em;line-height:1}
+.g{background:linear-gradient(90deg,#ff4d6d,#a78bfa,#2fd47a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{font-size:44px;font-weight:800;letter-spacing:-.03em;margin-top:22px;line-height:1.1}
+.sub{font-size:22px;color:#a9aec0;margin-top:20px;line-height:1.45;max-width:520px}
+.keys{display:flex;gap:12px;margin-top:34px}
+.keys span{display:flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;background:#14161e;border:1px solid #2a2e3b;font-weight:700;font-size:17px}
+.foot{position:absolute;left:80px;bottom:56px;display:flex;gap:18px;align-items:center;font-size:18px;color:#8b90a3}
+.foot b{color:#eef0f6;font-family:"JetBrains Mono",monospace;font-weight:500}
+.dot{width:6px;height:6px;border-radius:50%;background:#4a5068}
+/* card stack */
+.stack{position:absolute;right:120px;top:84px;width:380px;height:470px}
+.c{position:absolute;inset:0;border-radius:30px;background:linear-gradient(180deg,#1f2330,#1a1d27);border:1px solid #2a2e3b;box-shadow:0 40px 80px -30px #000}
+.c.b3{transform:translate(27px,-36px) rotate(4.2deg) scale(.9);opacity:.35}
+.c.b2{transform:translate(18px,-24px) rotate(2.8deg) scale(.93);opacity:.55}
+.c.b1{transform:translate(9px,-12px) rotate(1.4deg) scale(.965);opacity:.8}
+.c.top{transform:rotate(-7deg) translate(-40px,10px);padding:30px;border-color:#3a3f52}
+.ic{font-size:46px;line-height:1}
+.nm{font-size:27px;font-weight:800;margin-top:14px;letter-spacing:-.02em}
+.pt{font-family:"JetBrains Mono",monospace;font-size:13px;color:#8b90a3;margin-top:6px}
+.sz{font-size:58px;font-weight:900;letter-spacing:-.04em;margin-top:18px}
+.bar{height:9px;border-radius:9px;background:#262a37;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;width:62%;background:linear-gradient(90deg,#2fd47a,#ffb547,#ff4d6d)}
+.chips{display:flex;gap:8px;margin-top:16px}
+.chip{font-size:14px;padding:5px 11px;border-radius:999px;border:1px solid #2a2e3b;color:#c9cdda;background:#ffffff08}
+.chip.j{color:#2fd47a;border-color:#2fd47a66}
+.stamp{position:absolute;top:34px;right:28px;transform:rotate(14deg);border:4px solid #ff4d6d;color:#ff4d6d;font-weight:900;font-size:30px;letter-spacing:.06em;padding:6px 16px;border-radius:14px;background:#0c0d12cc}
+.mini{margin-top:22px;height:96px;display:grid;grid-template-columns:2.2fr 1.4fr 1fr;grid-template-rows:1fr 1fr;gap:5px}
+.mini div{border-radius:7px;background:radial-gradient(circle at 30% 25%,color-mix(in srgb,var(--c) 70%,#fff),var(--c) 45%,color-mix(in srgb,var(--c) 55%,#000))}
+</style></head>
+<body>
+<div class="bg"></div><div class="grid"></div>
+<div class="left">
+  <div class="logo">Weg<span class="g">wisch</span></div>
+  <div class="tag">Tinder for your hard drive.</div>
+  <div class="sub">Swipe through what's eating your disk – biggest first. Free, open source, runs only on your computer.</div>
+  <div class="keys"><span style="color:#ff4d6d">← delete</span><span style="color:#2fd47a">→ keep</span><span style="color:#a78bfa">↑ ask AI</span></div>
+</div>
+<div class="foot"><b>github.com/JiroKonto/wegwisch</b><span class="dot"></span><span>Windows · macOS · Linux</span></div>
+<div class="stack">
+  <div class="c b3"></div><div class="c b2"></div><div class="c b1"></div>
+  <div class="c top">
+    <div class="stamp">DELETE</div>
+    <div class="ic">🧹</div>
+    <div class="nm">DXCache</div>
+    <div class="pt">AppData\Local\NVIDIA\DXCache</div>
+    <div class="sz">59.9 GB</div>
+    <div class="bar"><i></i></div>
+    <div class="chips"><span class="chip j">🧹 Shader cache</span><span class="chip">792 files</span></div>
+    <div class="mini">
+      <div style="--c:#ff4d6d;grid-row:span 2"></div><div style="--c:#a78bfa"></div><div style="--c:#2fd47a"></div><div style="--c:#4ea8ff"></div><div style="--c:#ffb547"></div>
+    </div>
+  </div>
+</div>
+</body></html>

@@ -92,6 +92,7 @@ async function pollScan() {
 // ---------- start screen ----------
 // step 1: pick a mode (+ smart decks), step 2: pick a drive
 async function goStart(step = 1) {
+  if (step !== 2) step = 1; // called as an event handler it would get the click event
   clearTimeout(pollT); cur = null; mode = 'dir'; $('#crumbs').textContent = ''; show('start'); trackFolder(null);
   $('#step1').hidden = step !== 1; $('#step2').hidden = step !== 2;
   document.querySelectorAll('[data-art]').forEach(el => el.innerHTML = ART[el.dataset.art]);
@@ -621,7 +622,7 @@ function setLang(l) {
 }
 
 // ---------- wiring ----------
-$('#logo').onclick = goStart;
+$('#logo').onclick = () => goStart(1);
 $('#trayBtn').onclick = openReview;
 $('#langBtn').onclick = () => setLang(lang === 'en' ? 'de' : 'en');
 $('#setBtn').onclick = openSettings;
