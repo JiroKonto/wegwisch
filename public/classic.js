@@ -19,7 +19,7 @@ async function openClassic(p) {
   Object.assign(cls, { path: p, parent: null, items: [], waiting: 1, filter: '', limit: 300, tree: null, treeAt: 0 });
   $('#cMap').innerHTML = '';
   $('#cFilter').value = '';
-  $('#crumbs').textContent = ''; show('classic'); updateModeBtn();
+  $('#crumbs').textContent = ''; show('classic'); updateModeBtn(); trackFolder(p);
   renderClassic();
   await refreshClassic();
 }

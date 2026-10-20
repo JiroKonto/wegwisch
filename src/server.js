@@ -9,6 +9,7 @@ const platform = require('./platform');
 const scanner = require('./scanner');
 const junk = require('./junk');
 const ai = require('./ai');
+const bin = require('./bin');
 const { classify } = require('./protect');
 const pkg = require('../package.json');
 
@@ -36,6 +37,8 @@ function ctx() {
   };
 }
 let drivesCache = platform.drives();
+scanner.setRoots(drivesCache.map(d => d.path));
+const withScan = ds => ds.map(d => ({ ...d, scan: scanner.driveProgress(d.path) }));
 
 function describe(p, isDir, st) {
   const k = scanner.key(p);
@@ -225,7 +228,15 @@ function start({ port = 4747, open = true, threads } = {}) {
           if (b.prescan) for (const d of drivesCache) scanner.request(d.path, false);
           return send(res, 200, { ...publicState(), ai: await ai.status(true), provider: await ai.provider() });
         }
-        case '/api/drives': drivesCache = platform.drives(); return send(res, 200, drivesCache);
+        case '/api/drives': drivesCache = platform.drives(); scanner.setRoots(drivesCache.map(d => d.path)); return send(res, 200, withScan(drivesCache));
+        case '/api/scan-drive': { const b = await readBody(req); if (drivesCache.some(d => d.path === b.path)) scanner.request(b.path, false); return send(res, 200, { ok: true }); }
+        case '/api/bin': return send(res, 200, await bin.info());
+        case '/api/bin/empty': {
+          const r = await bin.empty();
+          if (r.freed) { stats.freed += r.freed; stats.emptied = (stats.emptied || 0) + r.freed; stats.trashed = Math.max(0, (stats.trashed || 0) - r.freed); saveStats(); }
+          drivesCache = platform.drives();
+          return send(res, 200, { ...r, stats });
+        }
         case '/api/list': return send(res, 200, { ...await listDir(q), scan: scanner.progress() });
         case '/api/scan': return send(res, 200, scanner.progress());
         case '/api/peek': return send(res, 200, await peek(q));
@@ -251,7 +262,12 @@ function start({ port = 4747, open = true, threads } = {}) {
           saveKeep();
           return send(res, 200, { ok: true });
         }
-        case '/api/delete': { const b = await readBody(req); return send(res, 200, await remove(b.items || [])); }
+        case '/api/delete': {
+          const b = await readBody(req);
+          const r = await remove(b.items || []);
+          if (b.seconds > 0 && b.seconds < 86400) { stats.seconds = (stats.seconds || 0) + Math.round(b.seconds); saveStats(); }
+          return send(res, 200, r);
+        }
         case '/api/reveal': { const b = await readBody(req); platform.reveal(b.path); return send(res, 200, { ok: true }); }
       }
       send(res, 404, {});

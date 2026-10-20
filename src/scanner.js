@@ -18,6 +18,11 @@ let wanted = 4;
 let nextId = 1;
 const inflight = new Map();        // task id -> node
 const stats = { files: 0, bytes: 0, dirs: 0, started: Date.now() };
+// per-drive progress: the server tells us the drive roots; each scanned byte is counted for the longest matching root
+let roots = [];
+const perRoot = new Map(); // root key -> bytes scanned
+function setRoots(list) { roots = list.map(key).sort((a, b) => b.length - a.length); }
+function rootOf(k) { return roots.find(r => isUnder(k, r)); }
 
 function spawnWorker() {
   const w = new Worker(path.join(__dirname, 'scan-worker.js'));
@@ -74,6 +79,7 @@ function onResult({ id, bytes, files, dirs, err, uproject, dupArchives }) {
   inflight.delete(id);
   if (!n) return;
   stats.files += files; stats.bytes += bytes; stats.dirs++;
+  const rk = rootOf(n.key); if (rk) perRoot.set(rk, (perRoot.get(rk) || 0) + bytes);
   n.size += bytes; n.files += files;
   events.emit('dir', n.path, { dirs, uproject, dupArchives, err });
   for (const name of dirs) {
@@ -116,7 +122,14 @@ function setFocus(p) { focus = p ? key(p) : null; }
 // After deleting: forget the path, everything inside it, and its ancestors' totals.
 function invalidate(p) {
   const k = key(p);
+  const dropped = sizes.get(k)?.size || 0;
   for (const s of [...sizes.keys()]) if (isUnder(s, k) || isUnder(k, s)) sizes.delete(s);
+  const rk = rootOf(k); if (rk && dropped) perRoot.set(rk, Math.max(0, (perRoot.get(rk) || 0) - dropped));
+}
+
+function driveProgress(root) {
+  const k = key(root);
+  return { bytes: perRoot.get(k) || 0, done: sizes.has(k), active: nodes.has(k) };
 }
 
 function progress() {
@@ -125,4 +138,4 @@ function progress() {
     rate: Math.round(stats.files / Math.max(1, (Date.now() - stats.started) / 1000)) };
 }
 
-module.exports = { request, get, setFocus, setThreads, invalidate, progress, events, key };
+module.exports = { request, get, setFocus, setThreads, invalidate, progress, events, key, setRoots, driveProgress };

@@ -89,7 +89,7 @@ async function pollScan() {
 // ---------- start screen ----------
 // step 1: pick a mode (+ smart decks), step 2: pick a drive
 async function goStart(step = 1) {
-  clearTimeout(pollT); cur = null; mode = 'dir'; $('#crumbs').textContent = ''; show('start');
+  clearTimeout(pollT); cur = null; mode = 'dir'; $('#crumbs').textContent = ''; show('start'); trackFolder(null);
   $('#step1').hidden = step !== 1; $('#step2').hidden = step !== 2;
   document.querySelectorAll('[data-art]').forEach(el => el.innerHTML = ART[el.dataset.art]);
   if (step === 1) return renderSmart();
@@ -98,21 +98,89 @@ async function goStart(step = 1) {
   $('#driveGrid').innerHTML = ds.map(d => {
     const used = d.total - d.free, pct = d.total ? used / d.total * 100 : 0;
     const tag = d.oldSystem ? `<span class="tag old">${t('oldSystem')}</span>` : d.system ? `<span class="tag">${t('system')}</span>` : '';
-    return `<button class="drive ${pct > 95 ? 'full' : ''}" data-path="${esc(d.path)}">${tag}
+    return `<div class="drive ${pct > 95 ? 'full' : ''}" data-path="${esc(d.path)}" role="button" tabindex="0">
+      <button class="ring" data-ring="${esc(d.path)}">${ringSVG(d)}</button>
       <div class="dart">${ART[d.kind] || ART.disk}</div>
-      <div class="l">${esc(d.label)} <span class="kind">${t('kind.' + (d.kind || 'disk'))}</span></div>
+      <div class="l">${esc(d.label)} <span class="kind">${t('kind.' + (d.kind || 'disk'))}</span>${tag}</div>
       <div class="model" title="${esc(d.model || '')}">${esc(d.model || '')}</div>
       <div class="f">${t('free', { free: fmt(d.free), total: fmt(d.total) })}</div>
-      <div class="bar"><i style="width:${pct}%"></i></div></button>`;
+      <div class="bar"><i style="width:${pct}%"></i></div></div>`;
   }).join('');
-  document.querySelectorAll('.drive').forEach(b => b.onclick = () => openFolder(b.dataset.path));
+  document.querySelectorAll('.drive').forEach(b => {
+    b.onclick = e => { if (!e.target.closest('.ring')) openFolder(b.dataset.path); };
+    b.onkeydown = e => { if (e.key === 'Enter') openFolder(b.dataset.path); };
+  });
+  document.querySelectorAll('[data-ring]').forEach(r => r.onclick = async () => { await api('/api/scan-drive', { path: r.dataset.ring }); pollDrives(); });
+  pollDrives();
+}
+
+// scan progress ring: share of the drive's used space that has been scanned so far
+function ringPct(d) {
+  if (d.scan?.done) return 100;
+  const used = d.total - d.free;
+  return used > 0 ? Math.min(99, Math.floor((d.scan?.bytes || 0) / used * 100)) : 0;
+}
+function ringSVG(d) {
+  const p = ringPct(d), r = 17, c = 2 * Math.PI * r, idle = !p && !d.scan?.active;
+  return `<svg viewBox="0 0 44 44" width="44" height="44"><circle cx="22" cy="22" r="${r}" fill="none" stroke="#262a37" stroke-width="4"/>
+    <circle cx="22" cy="22" r="${r}" fill="none" stroke="${p === 100 ? '#2fd47a' : 'url(#wwg)'}" stroke-width="4" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p / 100)}" transform="rotate(-90 22 22)" style="transition:stroke-dashoffset .6s"/>
+    <text x="22" y="26" text-anchor="middle" font-size="${idle ? 9 : 11}" font-weight="700" fill="${idle ? '#8b90a3' : '#eef0f6'}" font-family="Inter,sans-serif">${idle ? t('scanShort') : p + '%'}</text></svg>`;
+}
+let drivesT = null;
+async function pollDrives() {
+  clearTimeout(drivesT);
+  if (!onScreen('start') || $('#step2').hidden) return;
+  let ds; try { ds = await api('/api/drives'); } catch { return; }
+  let busy = false;
+  for (const d of ds) {
+    const r = document.querySelector(`[data-ring="${CSS.escape(d.path)}"]`);
+    if (r) { r.innerHTML = ringSVG(d); r.title = d.scan?.done ? t('scanDone') : t('scanTip', { p: ringPct(d) }); }
+    if (d.scan?.active) busy = true;
+  }
+  drivesT = setTimeout(pollDrives, busy ? 1200 : 4000);
 }
 function chooseMode(m) { setViewMode(m); goStart(2); }
 // smart decks on the start screen; more get added here
 const SMART = [{ id: 'junk', icon: '🧹', title: 'junkTitle', sub: 'junkSub', open: () => openJunk() }];
+let binInfo = null;
+// time spent cleaning, per folder; paused while the tab is hidden
+const timeT = { cur: null, since: 0, per: new Map(), total: 0 };
+function trackFolder(p) {
+  const now = Date.now();
+  if (timeT.cur) { const d = now - timeT.since; timeT.per.set(timeT.cur, (timeT.per.get(timeT.cur) || 0) + d); timeT.total += d; }
+  timeT.cur = p; timeT.since = now;
+}
+let hiddenFolder = null;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenFolder = timeT.cur; trackFolder(null); } else if (hiddenFolder) { trackFolder(hiddenFolder); hiddenFolder = null; }
+});
+const fmtDur = ms => { const s = Math.round(ms / 1000), m = Math.floor(s / 60); return m ? `${m} min ${s % 60} s` : `${s} s`; };
+let lastFreed = 0;
 function renderSmart() {
-  $('#smartGrid').innerHTML = SMART.map(c => `<button class="junkcard" data-smart="${c.id}"><div class="big">${c.icon}</div><div><b>${t(c.title)}</b><span>${t(c.sub)}</span></div></button>`).join('');
+  $('#smartGrid').innerHTML = SMART.map(c => `<button class="junkcard" data-smart="${c.id}"><div class="big">${c.icon}</div><div><b>${t(c.title)}</b><span>${t(c.sub)}</span></div></button>`).join('')
+    + `<div class="junkcard bincard" id="binCard" hidden><div class="big">🗑</div><div><b>${t('binTitle')}</b><span id="binSub"></span></div><button class="btn primary" id="binBtn"></button></div>`;
   SMART.forEach(c => $(`[data-smart="${c.id}"]`).onclick = c.open);
+  wireBin($('#binBtn'), $('#binSub'), $('#binCard'));
+}
+// two-step "empty the recycle bin" button, used on the start screen and the result screen
+async function wireBin(btn, sub, box) {
+  try { binInfo = await api('/api/bin'); } catch { return; }
+  if (!binInfo.size) { box.hidden = true; return; }
+  box.hidden = false;
+  if (sub) sub.textContent = t('binSub', { s: fmt(binInfo.size), n: num(binInfo.items) });
+  let armed = false;
+  btn.textContent = t('binEmpty', { s: fmt(binInfo.size) });
+  btn.onclick = async () => {
+    if (!armed) { armed = true; btn.textContent = t('binSure'); btn.classList.add('armed'); setTimeout(() => { if (armed) { armed = false; btn.textContent = t('binEmpty', { s: fmt(binInfo.size) }); btn.classList.remove('armed'); } }, 5000); return; }
+    armed = false; btn.disabled = true; btn.textContent = t('working');
+    const r = await api('/api/bin/empty', {});
+    S.stats = r.stats || S.stats;
+    toast(t('binDone', { s: fmt(r.freed) }));
+    btn.disabled = false; btn.classList.remove('armed');
+    if (onScreen('result')) { lastFreed += r.freed; $('#freedBig').textContent = fmt(lastFreed); $('#freedTrash').textContent = ''; }
+    wireBin(btn, sub, box);
+  };
 }
 
 // ---------- loading a folder / the junk radar ----------
@@ -120,13 +188,13 @@ function resetDeck() { clearTimeout(pollT); decided = new Set(); history = []; o
 async function openDir(p) {
   resetDeck(); mode = 'dir';
   cur = { path: p, items: [], waiting: 1 };
-  $('#crumbs').textContent = p; show('deckScreen');
+  $('#crumbs').textContent = p; show('deckScreen'); trackFolder(p);
   await refresh();
 }
 async function openJunk() {
   resetDeck(); mode = 'junk'; exploreQ = [];
   cur = { path: null, items: [], waiting: 1 };
-  $('#crumbs').textContent = t('junkTitle'); show('deckScreen');
+  $('#crumbs').textContent = t('junkTitle'); show('deckScreen'); trackFolder('🧹 ' + t('junkTitle'));
   await refresh();
   if (!S.settings.prescan) toast(t('junkScanHint'));
 }
@@ -364,7 +432,9 @@ async function doDelete() {
   const b = $('#doDelete'); b.disabled = true; b.textContent = t('working');
   const items = [...delQ.values()].map(i => ({ path: i.path, permanent: i.permanent, contents: !!i.contents }));
   let r;
-  try { r = await api('/api/delete', { items }); } catch (e) { r = { results: [], error: String(e) }; }
+  trackFolder(timeT.cur);
+  const seconds = (timeT.total - (timeT.reported || 0)) / 1000; timeT.reported = timeT.total;
+  try { r = await api('/api/delete', { items, seconds }); } catch (e) { r = { results: [], error: String(e) }; }
   b.textContent = t('doDelete');
   r.results.forEach(x => { if (x.ok) delQ.delete(x.path); });
   updateTray();
@@ -380,10 +450,14 @@ async function doDelete() {
 // ---------- result + share image ----------
 function showResult(r, n, switchScreen) {
   const total = (r.freed || 0) + (r.trashed || 0);
+  lastFreed = total;
   $('#freedBig').textContent = fmt(total);
+  const topF = [...timeT.per.entries()].sort((a, b) => b[1] - a[1])[0];
+  $('#freedTime').textContent = timeT.total ? t('timeLine', { d: fmtDur(timeT.total) }) + (topF ? ' · ' + t('timeTop', { f: topF[0].split(/[\\/]/).filter(Boolean).pop() || topF[0], d: fmtDur(topF[1]) }) : '') : '';
+  wireBin($('#resBin'), null, $('#resBinBox'));
   $('#freedSub').textContent = t('resultSub', { n });
   $('#freedTrash').textContent = r.trashed ? t('resultTrash', { s: fmt(r.trashed) }) : '';
-  $('#lifetime').textContent = t('lifetime', { s: fmt((S.stats.freed || 0) + (S.stats.trashed || 0)) });
+  $('#lifetime').textContent = t('lifetime', { s: fmt((S.stats.freed || 0) + (S.stats.trashed || 0)) }) + (S.stats.seconds ? ' · ' + t('lifetimeTime', { d: fmtDur(S.stats.seconds * 1000) }) : '');
   drawShare(total, n);
   if (switchScreen || n) show('result');
 }
@@ -402,7 +476,7 @@ function drawShare(bytes, n) {
   const big = g.createLinearGradient(80, 0, 900, 0); big.addColorStop(0, '#2fd47a'); big.addColorStop(1, '#a78bfa');
   g.fillStyle = big; g.font = '800 190px Inter, system-ui, sans-serif'; g.fillText(fmt(bytes), 70, 360);
   g.fillStyle = '#eef0f6'; g.font = '700 46px Inter, system-ui, sans-serif'; g.fillText(t('shareLine'), 80, 440);
-  g.fillStyle = '#8b90a3'; g.font = '500 30px Inter, system-ui, sans-serif'; g.fillText(t('resultSub', { n }), 80, 500);
+  g.fillStyle = '#8b90a3'; g.font = '500 30px Inter, system-ui, sans-serif'; g.fillText(t('resultSub', { n }) + (timeT.total ? ' · ' + t('shareTime', { d: fmtDur(timeT.total) }) : ''), 80, 500);
   g.font = '500 26px "JetBrains Mono", monospace'; g.fillText('github.com/JiroKonto/wegwisch', 80, 570);
   g.font = '120px serif'; g.fillText('🧹', 1000, 560);
 }

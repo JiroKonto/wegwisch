@@ -252,3 +252,14 @@ main{position:relative;height:calc(100% - 64px)}
 .crow.hl{background:#ffffff0d}
 .crow.flash{animation:rowflash 1.2s}
 @keyframes rowflash{0%,40%{background:color-mix(in srgb,var(--ask) 30%,transparent)}}
+
+/* drive card: scan progress ring (top right) */
+.drive{cursor:pointer}
+.drive .ring{position:absolute;top:12px;right:12px;width:44px;height:44px;border-radius:50%;padding:0}
+.drive .ring:hover{background:#ffffff0a}
+.drive .l .tag{position:static;margin-left:auto;align-self:center}
+.bincard{grid-column:auto;display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:18px;row-gap:12px}
+.bincard .btn{grid-column:2;justify-self:start}
+.bincard .btn{font-size:13px;padding:8px 14px}
+.btn.armed{background:#b3123a;border-color:#ff4d6d;animation:pulse 1s infinite}
+.ftime{color:var(--text)!important}
