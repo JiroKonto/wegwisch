@@ -30,18 +30,18 @@ function drives() {
       const root = `${L}:\\`;
       const s = statfs(root);
       if (!s || !s.total) continue;
-      out.push({ path: root, label: `${L}:`, ...s, system: `${L}:`.toLowerCase() === SYSTEM_DRIVE.toLowerCase(), oldSystem: oldSystems().includes(`${L}:`) });
+      out.push({ path: root, label: `${L}:`, ...s, ...kindOf(root), system: `${L}:`.toLowerCase() === SYSTEM_DRIVE.toLowerCase(), oldSystem: oldSystems().includes(`${L}:`) });
     }
   } else if (PLATFORM === 'darwin') {
     const root = statfs('/');
-    if (root) out.push({ path: '/', label: 'Macintosh HD', ...root, system: true });
+    if (root) out.push({ path: '/', label: 'Macintosh HD', ...root, ...kindOf('/'), system: true });
     let vols = [];
     try { vols = fs.readdirSync('/Volumes'); } catch {}
     for (const v of vols) {
       const p = '/Volumes/' + v;
       try { if (fs.realpathSync(p) === '/') continue; } catch { continue; }
       const s = statfs(p);
-      if (s && s.total) out.push({ path: p, label: v, ...s });
+      if (s && s.total) out.push({ path: p, label: v, ...s, ...kindOf(p) });
     }
   } else {
     let mounts = '';
@@ -54,11 +54,48 @@ function drives() {
       if (m.startsWith('/snap') || m.startsWith('/boot') || seen.has(dev)) continue;
       seen.add(dev);
       const s = statfs(m);
-      if (s && s.total) out.push({ path: m, label: m === '/' ? 'System' : path.basename(m), ...s, system: m === '/' });
+      if (s && s.total) out.push({ path: m, label: m === '/' ? 'System' : path.basename(m), ...s, ...kindOf(m), system: m === '/' });
     }
   }
   return out;
 }
+
+// ---------- drive kind (nvme | ssd | hdd | usb | disk) for the icons ----------
+let kinds = {}; // drive path -> {kind, model}
+async function refreshKinds() {
+  const out = {};
+  if (PLATFORM === 'win32') {
+    const ps = `[Console]::OutputEncoding=[Text.Encoding]::UTF8
+Get-Partition | Where-Object DriveLetter | ForEach-Object {
+  $d = Get-Disk -Number $_.DiskNumber; $p = Get-PhysicalDisk | Where-Object DeviceId -eq "$($_.DiskNumber)"
+  "$($_.DriveLetter)|$($d.BusType)|$($p.MediaType)|$($d.FriendlyName)" }`;
+    const r = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps]);
+    for (const l of r.stdout.split(/\r?\n/)) {
+      const [L, bus, media, model] = l.trim().split('|');
+      if (!L || L.length !== 1) continue;
+      const kind = /usb/i.test(bus) ? 'usb' : /nvme/i.test(bus) ? 'nvme' : /ssd/i.test(media) ? 'ssd' : /hdd/i.test(media) ? 'hdd' : 'disk';
+      out[`${L}:\\`] = { kind, model: (model || '').trim() };
+    }
+  } else if (PLATFORM === 'linux') {
+    const r = await run('lsblk', ['-J', '-o', 'MOUNTPOINT,ROTA,TRAN,MODEL']);
+    try {
+      const walk = (devs, parent) => devs.forEach(d => {
+        const info = { rota: d.rota ?? parent?.rota, tran: d.tran || parent?.tran, model: d.model || parent?.model };
+        if (d.mountpoint) out[d.mountpoint] = { kind: info.tran === 'usb' ? 'usb' : info.tran === 'nvme' ? 'nvme' : (info.rota === true || info.rota === '1') ? 'hdd' : 'ssd', model: (info.model || '').trim() };
+        if (d.children) walk(d.children, info);
+      });
+      walk(JSON.parse(r.stdout).blockdevices || []);
+    } catch {}
+  } else if (PLATFORM === 'darwin') {
+    for (const d of drives()) {
+      const r = await run('diskutil', ['info', d.path]);
+      const ssd = /Solid State:\s+Yes/i.test(r.stdout), internal = /Device Location:\s+Internal/i.test(r.stdout) || /Internal:\s+Yes/i.test(r.stdout);
+      out[d.path] = { kind: !internal ? 'usb' : ssd ? (/NVMe|PCI/i.test(r.stdout) ? 'nvme' : 'ssd') : 'hdd', model: (/Device \/ Media Name:\s+(.+)/.exec(r.stdout) || [])[1] || '' };
+    }
+  }
+  kinds = out;
+}
+const kindOf = p => kinds[p] || { kind: 'disk', model: '' };
 
 // Windows: a second drive with its own \Windows\System32 is a leftover install.
 let oldCache = null;
@@ -201,4 +238,4 @@ function openBrowser(url) {
   else spawn(PLATFORM === 'darwin' ? 'open' : 'xdg-open', [url], { detached: true, stdio: 'ignore' }).unref();
 }
 
-module.exports = { PLATFORM, HOME, SYSTEM_DRIVE, run, drives, oldSystems, cloudDirs, refreshRunning, runningExecutables, trash, removePermanently, reveal, openBrowser };
+module.exports = { PLATFORM, HOME, SYSTEM_DRIVE, run, drives, refreshKinds, oldSystems, cloudDirs, refreshRunning, runningExecutables, trash, removePermanently, reveal, openBrowser };

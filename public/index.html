@@ -21,13 +21,22 @@
 </header>
 <main>
   <section class="screen on" id="start">
-    <h1 data-t="pickDrive"></h1>
-    <p class="sub" data-t="pickSub"></p>
-    <div class="modepick" id="modePick">
-      <button data-mode="swipe"><b>🃏 <span data-t="modeSwipe"></span></b><span data-t="modeSwipeSub"></span></button>
-      <button data-mode="classic"><b>📊 <span data-t="modeClassic"></span></b><span data-t="modeClassicSub"></span></button>
+    <div class="step" id="step1">
+      <h1 data-t="pickMode"></h1>
+      <p class="sub" data-t="pickModeSub"></p>
+      <div class="modes">
+        <button class="mode" data-mode="swipe"><div class="mart" data-art="swipe"></div><b data-t="modeSwipe"></b><span data-t="modeSwipeSub"></span></button>
+        <button class="mode" data-mode="classic"><div class="mart" data-art="classic"></div><b data-t="modeClassic"></b><span data-t="modeClassicSub"></span></button>
+      </div>
+      <h3 class="smartT" data-t="smartTitle"></h3>
+      <div class="smart" id="smartGrid"></div>
     </div>
-    <div class="grid" id="driveGrid"></div>
+    <div class="step" id="step2" hidden>
+      <button class="backlink" id="backMode">← <span data-t="changeMode"></span></button>
+      <h1 data-t="pickDrive"></h1>
+      <p class="sub" id="driveSub"></p>
+      <div class="grid" id="driveGrid"></div>
+    </div>
   </section>
 
   <section class="screen" id="classic">
@@ -128,7 +137,9 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="wwg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff4d6d"/><stop offset=".5" stop-color="#a78bfa"/><stop offset="1" stop-color="#2fd47a"/></linearGradient></defs></svg>
 <script src="i18n.js"></script>
+<script src="art.js"></script>
 <script src="app.js"></script>
 <script src="classic.js"></script>
 </body>

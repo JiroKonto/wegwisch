@@ -28,7 +28,7 @@ main{position:relative;height:calc(100% - 64px)}
 .screen.on{display:flex}
 
 /* start */
-#start h1{font-size:34px;font-weight:800;letter-spacing:-.03em;margin:28px 0 6px;text-align:center}
+#start h1{font-size:36px;font-weight:800;letter-spacing:-.03em;margin:26px 0 6px;text-align:center}
 #start p.sub{color:var(--dim);margin-bottom:28px;text-align:center;max-width:620px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;width:100%;max-width:980px}
 .drive{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;text-align:left;transition:.15s;position:relative}
@@ -48,12 +48,13 @@ main{position:relative;height:calc(100% - 64px)}
 
 /* deck */
 .deck{position:relative;width:min(440px,100%);flex:1;min-height:470px;max-height:680px;margin-top:6px}
-.card{position:absolute;inset:0 0 60px 0;background:linear-gradient(180deg,#1f2330,var(--card));border:1px solid var(--line);border-radius:28px;padding:26px;display:flex;flex-direction:column;box-shadow:0 30px 60px -20px #000a;touch-action:none;cursor:grab;overflow:hidden}
+.card{position:absolute;inset:64px 0 0 0;background:linear-gradient(180deg,#1f2330,var(--card));border:1px solid var(--line);border-radius:28px;padding:26px;display:flex;flex-direction:column;box-shadow:0 30px 60px -20px #000a;touch-action:none;cursor:grab;overflow:hidden}
 /* stacked cards behind the top one; --d = depth (1 = directly behind) */
-.card.back{--d:1;transform-origin:50% 100%;transform:translateY(calc(var(--d) * 11px)) scale(calc(1 - var(--d) * .04));opacity:calc(1 - var(--d) * .15);pointer-events:none;border-color:#363b4d;
+.card.back{--d:1;transform-origin:50% 0;transform:translate(calc(var(--d) * 9px), calc(var(--d) * -12px)) rotate(calc(var(--d) * 1.4deg)) scale(calc(1 - var(--d) * .035));opacity:calc(1 - var(--d) * .15);pointer-events:none;border-color:#363b4d;
   transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .32s;box-shadow:0 10px 30px -12px #000c}
-.card.back > *{visibility:hidden}
-.card.incoming{transform-origin:50% 100%;transform:translateY(11px) scale(.96)}
+.card.back:not([data-d="1"]) > *{visibility:hidden}
+.card.incoming{transform-origin:50% 0;transform:translate(9px,-12px) rotate(1.4deg) scale(.965)}
+#deckScreen{overflow:hidden}
 .left{color:var(--dim);font-size:12px;height:16px;margin-top:6px;text-align:center}
 .card.anim{transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .32s}
 .card:active{cursor:grabbing}
@@ -208,3 +209,26 @@ main{position:relative;height:calc(100% - 64px)}
 .cmore{padding:12px;text-align:center}
 .cempty{padding:40px;text-align:center;color:var(--dim)}
 @media (max-width:900px){ .crow{grid-template-columns:30px 26px minmax(0,1fr) 140px 0 0 0 76px} .cpct,.cfiles,.cdate{display:none} #cFilter{width:120px} }
+
+/* start: step 1 (mode) and step 2 (drive) */
+.step{width:100%;max-width:980px;display:flex;flex-direction:column;align-items:center}
+.step[hidden]{display:none}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%}
+.mode{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px 26px 24px;text-align:left;transition:.18s;display:flex;flex-direction:column;gap:4px}
+.mode:hover{transform:translateY(-4px);border-color:#4a5068;box-shadow:0 24px 50px -24px #000c}
+.mode.on{border-color:color-mix(in srgb,var(--ask) 60%,var(--line))}
+.mode b{font-size:22px;letter-spacing:-.02em;margin-top:10px;color:var(--text);font-weight:800}
+.mode span{color:var(--dim);font-size:14px;font-weight:400}
+.mart{height:150px;display:grid;place-items:center;background:radial-gradient(260px 120px at 50% 60%,#ffffff07,transparent);border-radius:16px}
+.mart svg{height:100%;width:auto;max-width:100%}
+.smartT{align-self:flex-start;font-size:15px;color:var(--dim);font-weight:600;margin:34px 0 12px}
+.smart{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;width:100%}
+.smart .junkcard{grid-column:auto}
+.backlink{align-self:flex-start;color:var(--dim);font-size:14px;font-weight:600;margin:14px 0 -8px;padding:6px 10px;border-radius:10px}
+.backlink:hover{color:var(--text);background:#ffffff0a}
+.drive .dart{height:58px;margin:-4px 0 10px -6px}
+.drive .dart svg{height:100%;width:auto}
+.drive .l{display:flex;align-items:baseline;gap:10px}
+.drive .kind{font-size:13px;font-weight:600;color:var(--dim);letter-spacing:0}
+.drive .model{font-size:12px;color:#5d6276;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:16px}
+@media (max-width:700px){ .modes{grid-template-columns:1fr} .mart{height:110px} }

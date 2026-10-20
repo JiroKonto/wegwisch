@@ -2,6 +2,9 @@
 window.I18N = {
   en: {
     pickDrive: 'Which drive should we clean up?',
+    pickMode: 'How do you want to clean up?', pickModeSub: 'Nothing is deleted until you confirm at the end – and then it goes to the Recycle Bin.',
+    smartTitle: 'Or let Wegwisch find the junk', changeMode: 'Change mode',
+    kind: { nvme: 'NVMe SSD', ssd: 'SSD', hdd: 'Hard drive', usb: 'USB', disk: 'Drive' },
     modeSwipe: 'Swipe', modeSwipeSub: 'One card at a time, biggest first', modeClassic: 'Classic', modeClassicSub: 'Explorer-style list with all sizes at once',
     colName: 'Name', colSize: 'Size', colFiles: 'Files', colModified: 'Modified',
     leftN: '{n} left', cEntries: '{n} entries', cPicked: '{s} selected', cEmpty: 'This folder is empty.', cMore: 'Show {n} more', cFilter: 'Filter…',
@@ -12,7 +15,7 @@ window.I18N = {
     calc: 'Calculating folder sizes', calcProgress: '{done} of {n} folders done', scanned: '{files} files · {bytes} scanned',
     startAnyway: 'Start swiping anyway', sizeCalc: 'Calculating size',
     ofFolder: '{p} % of this folder', files: '{n} files', modified: 'changed {ago}',
-    today: 'today', days: '{n} days ago', months: '{n} months ago', years: '{n} years ago',
+    today: 'today', day: '1 day ago', days: '{n} days ago', month: '1 month ago', months: '{n} months ago', year: '1 year ago', years: '{n} years ago',
     del: 'Delete', keep: 'Keep', look: 'Look inside', ask: 'Ask AI', forever: 'Never again', undo: 'Undo (Z)', skip: 'Finish this folder (S)', reveal: 'Show in file manager',
     stampDel: 'DELETE', stampKeep: 'KEEP', stampLook: 'LOOK INSIDE', stampAsk: 'ASK AI?', stampForever: 'FOREVER',
     hint: '<kbd>←</kbd> delete · <kbd>→</kbd> keep / look inside · <kbd>↑</kbd> ask AI · <kbd>↓</kbd> keep forever · <kbd>Z</kbd> undo',
@@ -53,6 +56,9 @@ window.I18N = {
   },
   de: {
     pickDrive: 'Welche Festplatte räumen wir auf?',
+    pickMode: 'Wie willst du aufräumen?', pickModeSub: 'Gelöscht wird erst, wenn du am Ende bestätigst – und dann in den Papierkorb.',
+    smartTitle: 'Oder lass Wegwisch den Müll finden', changeMode: 'Modus ändern',
+    kind: { nvme: 'NVMe-SSD', ssd: 'SSD', hdd: 'Festplatte (HDD)', usb: 'USB', disk: 'Laufwerk' },
     modeSwipe: 'Swipe', modeSwipeSub: 'Eine Karte nach der anderen, das Größte zuerst', modeClassic: 'Klassisch', modeClassicSub: 'Liste wie im Explorer, alle Größen auf einen Blick',
     colName: 'Name', colSize: 'Größe', colFiles: 'Dateien', colModified: 'Geändert',
     leftN: 'noch {n}', cEntries: '{n} Einträge', cPicked: '{s} ausgewählt', cEmpty: 'Dieser Ordner ist leer.', cMore: '{n} weitere anzeigen', cFilter: 'Filtern…',
@@ -63,7 +69,7 @@ window.I18N = {
     calc: 'Ordnergrößen werden berechnet', calcProgress: '{done} von {n} Ordnern fertig', scanned: '{files} Dateien · {bytes} gescannt',
     startAnyway: 'Trotzdem schon loslegen', sizeCalc: 'Größe wird berechnet',
     ofFolder: '{p} % von diesem Ordner', files: '{n} Dateien', modified: '{ago} geändert',
-    today: 'heute', days: 'vor {n} Tagen', months: 'vor {n} Monaten', years: 'vor {n} Jahren',
+    today: 'heute', day: 'vor 1 Tag', days: 'vor {n} Tagen', month: 'vor 1 Monat', months: 'vor {n} Monaten', year: 'vor 1 Jahr', years: 'vor {n} Jahren',
     del: 'Löschen', keep: 'Behalten', look: 'Reinschauen', ask: 'KI fragen', forever: 'Nie wieder', undo: 'Rückgängig (Z)', skip: 'Ordner beenden (S)', reveal: 'Im Dateimanager zeigen',
     stampDel: 'LÖSCHEN', stampKeep: 'BEHALTEN', stampLook: 'REINSCHAUEN', stampAsk: 'KI FRAGEN?', stampForever: 'FÜR IMMER',
     hint: '<kbd>←</kbd> löschen · <kbd>→</kbd> behalten / reinschauen · <kbd>↑</kbd> KI fragen · <kbd>↓</kbd> für immer behalten · <kbd>Z</kbd> rückgängig',

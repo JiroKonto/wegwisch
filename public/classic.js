@@ -8,7 +8,7 @@ const cls = { path: null, parent: null, items: [], waiting: 0, sort: 'size', dir
 function setViewMode(m) {
   viewMode = m;
   try { localStorage.setItem('viewMode', m); } catch {}
-  document.querySelectorAll('#modePick button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  document.querySelectorAll('.mode').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
 }
 function openFolder(p) { exploreQ = []; viewMode === 'classic' ? openClassic(p) : openDir(p); }
 
@@ -164,5 +164,4 @@ $('#modeBtn').onclick = () => {
   if (onScreen('classic')) { setViewMode('swipe'); clearTimeout(cls.timer); exploreQ = []; openDir(cls.path); }
   else if (cur && mode === 'dir') { setViewMode('classic'); openClassic(cur.path); }
 };
-document.querySelectorAll('#modePick button').forEach(b => b.onclick = () => setViewMode(b.dataset.mode));
 setViewMode(viewMode);

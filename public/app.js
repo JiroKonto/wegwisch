@@ -31,8 +31,9 @@ function num(n) { return (n || 0).toLocaleString(lang); }
 function ago(ms) {
   const d = (Date.now() - ms) / 864e5;
   if (d < 1) return t('today');
-  if (d < 30) return t('days', { n: Math.round(d) });
-  if (d < 365) return t('months', { n: Math.round(d / 30) });
+  if (d < 30) return Math.round(d) === 1 ? t('day') : t('days', { n: Math.round(d) });
+  if (d < 365) return Math.round(d / 30) <= 1 ? t('month') : t('months', { n: Math.round(d / 30) });
+  if (d < 547) return t('year');
   return t('years', { n: (d / 365).toLocaleString(lang, { maximumFractionDigits: 1 }) });
 }
 function icon(it) {
@@ -86,20 +87,32 @@ async function pollScan() {
 }
 
 // ---------- start screen ----------
-async function goStart() {
+// step 1: pick a mode (+ smart decks), step 2: pick a drive
+async function goStart(step = 1) {
   clearTimeout(pollT); cur = null; mode = 'dir'; $('#crumbs').textContent = ''; show('start');
+  $('#step1').hidden = step !== 1; $('#step2').hidden = step !== 2;
+  document.querySelectorAll('[data-art]').forEach(el => el.innerHTML = ART[el.dataset.art]);
+  if (step === 1) return renderSmart();
+  $('#driveSub').textContent = t(viewMode === 'classic' ? 'modeClassicSub' : 'modeSwipeSub');
   const ds = await api('/api/drives');
-  const drives = ds.map(d => {
+  $('#driveGrid').innerHTML = ds.map(d => {
     const used = d.total - d.free, pct = d.total ? used / d.total * 100 : 0;
     const tag = d.oldSystem ? `<span class="tag old">${t('oldSystem')}</span>` : d.system ? `<span class="tag">${t('system')}</span>` : '';
     return `<button class="drive ${pct > 95 ? 'full' : ''}" data-path="${esc(d.path)}">${tag}
-      <div class="l">${esc(d.label)}</div>
+      <div class="dart">${ART[d.kind] || ART.disk}</div>
+      <div class="l">${esc(d.label)} <span class="kind">${t('kind.' + (d.kind || 'disk'))}</span></div>
+      <div class="model" title="${esc(d.model || '')}">${esc(d.model || '')}</div>
       <div class="f">${t('free', { free: fmt(d.free), total: fmt(d.total) })}</div>
       <div class="bar"><i style="width:${pct}%"></i></div></button>`;
   }).join('');
-  $('#driveGrid').innerHTML = drives + `<button class="junkcard" id="junkBtn"><div class="big">🧹</div><div><b>${t('junkTitle')}</b><span>${t('junkSub')}</span></div></button>`;
   document.querySelectorAll('.drive').forEach(b => b.onclick = () => openFolder(b.dataset.path));
-  $('#junkBtn').onclick = openJunk;
+}
+function chooseMode(m) { setViewMode(m); goStart(2); }
+// smart decks on the start screen; more get added here
+const SMART = [{ id: 'junk', icon: '🧹', title: 'junkTitle', sub: 'junkSub', open: () => openJunk() }];
+function renderSmart() {
+  $('#smartGrid').innerHTML = SMART.map(c => `<button class="junkcard" data-smart="${c.id}"><div class="big">${c.icon}</div><div><b>${t(c.title)}</b><span>${t(c.sub)}</span></div></button>`).join('');
+  SMART.forEach(c => $(`[data-smart="${c.id}"]`).onclick = c.open);
 }
 
 // ---------- loading a folder / the junk radar ----------
@@ -280,7 +293,7 @@ async function decide(dir) {
   busy = false;
   decided.add(it.path); order.shift();
   if (dir === 'l') { delQ.set(it.path, { ...it, permanent: permanentDefault(it) }); updateTray(); }
-  if (dir === 'r' && it.isDir && mode === 'dir') { exploreQ.push(it.path); toast(t('laterToast', { n: it.name })); }
+  if (dir === 'r' && it.isDir && mode === 'dir') exploreQ.push(it.path);
   if (dir === 'd') { api('/api/keep', { path: it.path }); toast(t('foreverToast', { n: it.name })); }
   history.push({ dir, it });
   advanced = true;
@@ -438,7 +451,7 @@ async function saveSettings() {
 function setLang(l) {
   lang = l; try { localStorage.setItem('lang', l); } catch {}
   applyI18n();
-  if (onScreen('start')) goStart();
+  if (onScreen('start')) goStart($('#step2').hidden ? 1 : 2);
   else if (onScreen('deckScreen') && cur) render();
   else if (onScreen('review')) renderReview();
   else if (onScreen('classic')) renderClassic();
@@ -458,7 +471,9 @@ $('#sAi').onchange = syncAiFields;
 $('#aUndo').onclick = undo; $('#aSkip').onclick = skipFolder;
 $('#aDel').onclick = () => decide('l'); $('#aKeep').onclick = () => decide('r');
 $('#aAsk').onclick = () => decide('u'); $('#aForever').onclick = () => decide('d');
-$('#doneOther').onclick = goStart; $('#doneReview').onclick = openReview;
+$('#doneOther').onclick = () => goStart(2);
+$('#backMode').onclick = () => goStart(1);
+document.querySelectorAll('.mode').forEach(b => b.onclick = () => chooseMode(b.dataset.mode)); $('#doneReview').onclick = openReview;
 $('#revBack').onclick = backFromReview; $('#doDelete').onclick = doDelete;
 $('#saveImg').onclick = saveImg; $('#copyImg').onclick = copyImg;
 $('#resContinue').onclick = () => (reviewFrom === 'classic' && cls.path ? openClassic(cls.path) : cur ? (show('deckScreen'), render()) : goStart());

@@ -165,6 +165,7 @@ function start({ port = 4747, open = true, threads } = {}) {
   if (threads) settings.threads = threads;
   scanner.setThreads(settings.threads);
   platform.refreshRunning();
+  platform.refreshKinds().then(() => { drivesCache = platform.drives(); });
   setInterval(() => platform.refreshRunning(), 60000).unref();
   if (settings.prescan) for (const d of drivesCache) scanner.request(d.path, false);
 
