@@ -258,9 +258,9 @@ function start({ port = 4747, open = true, threads } = {}) {
   setInterval(() => platform.refreshRunning(), 60000).unref();
   if (settings.prescan) for (const d of drivesCache) scanner.request(d.path, false);
 
-  const server = http.createServer(async (req, res) => {
+  const handler = async (req, res) => {
     const host = req.headers.host || '';
-    if (host !== `localhost:${port}` && host !== `127.0.0.1:${port}`) return send(res, 403, { error: 'host' }); // DNS rebinding
+    if (![`localhost:${port}`, `127.0.0.1:${port}`, `[::1]:${port}`].includes(host)) return send(res, 403, { error: 'host' }); // DNS rebinding
     const url = new URL(req.url, `http://${host}`);
     const q = url.searchParams.get('path');
     try {
@@ -339,8 +339,14 @@ function start({ port = 4747, open = true, threads } = {}) {
       }
       send(res, 404, {});
     } catch (e) { send(res, 500, { error: e.code || e.message }); }
-  });
+  };
 
+  // Listen on IPv4 *and* IPv6 loopback: browsers resolve "localhost" to ::1 first,
+  // and if nothing answers there every request pays a ~200 ms fallback to 127.0.0.1.
+  const server = http.createServer(handler);
+  const server6 = http.createServer(handler);
+  server6.on('error', () => {}); // no IPv6 on this machine – fine
+  server6.listen(port, '::1');
   server.on('error', e => {
     if (e.code === 'EADDRINUSE') { console.log(`Wegwisch already seems to run on port ${port} – opening it.`); if (open) platform.openBrowser(`http://localhost:${port}`); process.exit(0); }
     throw e;
