@@ -8,7 +8,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node bin/wegwisch.js",
-    "test": "node --test test/*.test.js",
+    "test": "node scripts/test.js",
     "build:exe": "node scripts/build-exe.js"
   },
   "files": [
