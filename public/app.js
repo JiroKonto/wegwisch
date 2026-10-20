@@ -146,12 +146,13 @@ async function pollDrives() {
 function chooseMode(m) { setViewMode(m); goStart(2); }
 // smart decks on the start screen; more get added here
 const SMART = [
-  { id: 'junk', icon: '🧹', title: 'junkTitle', sub: 'junkSub', open: () => openJunk() },
-  { id: 'bigold', icon: '🐘', title: 'smart.bigold.t', sub: 'smart.bigold.s', open: () => openSmart('bigold') },
-  { id: 'dupes', icon: '👯', title: 'smart.dupes.t', sub: 'smart.dupes.s', open: () => openSmart('dupes') },
-  { id: 'growth', icon: '📈', title: 'smart.growth.t', sub: 'smart.growth.s', open: () => openSmart('growth') },
-  { id: 'programs', icon: '📦', title: 'smart.programs.t', sub: 'smart.programs.s', open: () => openSmart('programs'), os: ['win32', 'darwin'] },
-  { id: 'extras', icon: '🛠', title: 'smart.extras.t', sub: 'smart.extras.s', open: () => openSmart('extras'), os: ['win32'] },
+  { id: 'junk', color: '#2fd47a', title: 'junkTitle', sub: 'junkTile', open: () => openJunk() },
+  { id: 'bigold', color: '#ffb547', title: 'smart.bigold.t', sub: 'smart.bigold.s', open: () => openSmart('bigold') },
+  { id: 'dupes', color: '#a78bfa', title: 'smart.dupes.t', sub: 'smart.dupes.s', open: () => openSmart('dupes') },
+  { id: 'growth', color: '#22d3ee', title: 'smart.growth.t', sub: 'smart.growth.s', open: () => openSmart('growth') },
+  { id: 'programs', color: '#4ea8ff', title: 'smart.programs.t', sub: 'smart.programs.s', open: () => openSmart('programs'), os: ['win32', 'darwin'] },
+  { id: 'extras', color: '#f472b6', title: 'smart.extras.t', sub: 'smart.extras.s', open: () => openSmart('extras'), os: ['win32'] },
+  { id: 'bin', color: '#ff4d6d', title: 'binTitle', sub: 'binTile', open: () => binTileClick() },
 ];
 const realPath = p => !/^(dupe|prog|extra):/.test(p);
 let binInfo = null;
@@ -169,10 +170,40 @@ document.addEventListener('visibilitychange', () => {
 const fmtDur = ms => { const s = Math.round(ms / 1000), m = Math.floor(s / 60); return m ? `${m} min ${s % 60} s` : `${s} s`; };
 let lastFreed = 0;
 function renderSmart() {
-  $('#smartGrid').innerHTML = SMART.filter(c => !c.os || c.os.includes(S.platform)).map(c => `<button class="junkcard" data-smart="${c.id}"><div class="big">${c.icon}</div><div><b>${t(c.title)}</b><span>${t(c.sub)}</span></div></button>`).join('')
-    + `<div class="junkcard bincard" id="binCard" hidden><div class="big">🗑</div><div><b>${t('binTitle')}</b><span id="binSub"></span></div><button class="btn primary" id="binBtn"></button></div>`;
+  $('#smartGrid').innerHTML = SMART.filter(c => !c.os || c.os.includes(S.platform)).map(c => `
+    <button class="tile" data-smart="${c.id}" style="--a:${c.color}">
+      <div class="ta">${ART[c.id]}</div>
+      <div class="tt"><b>${t(c.title)}</b><span>${t(c.sub)}</span></div>
+      <em class="stat" hidden></em>
+    </button>`).join('');
   SMART.forEach(c => { const b = $(`[data-smart="${c.id}"]`); if (b) b.onclick = c.open; });
-  wireBin($('#binBtn'), $('#binSub'), $('#binCard'));
+  refreshBinTile();
+}
+// recycle bin tile: shows its size; first click arms, second click (within 5 s) empties
+let binArmed = null;
+async function refreshBinTile() {
+  const tile = $('[data-smart="bin"]'); if (!tile) return;
+  try { binInfo = await api('/api/bin'); } catch { return; }
+  const st = tile.querySelector('.stat');
+  st.hidden = true;
+  tile.querySelector('.tt span').textContent = binInfo.size ? t('binTileFull', { s: fmt(binInfo.size) }) : t('binEmptyNow');
+  tile.classList.toggle('dim', !binInfo.size);
+}
+async function binTileClick() {
+  const tile = $('[data-smart="bin"]');
+  if (!binInfo?.size) return;
+  if (!binArmed) {
+    tile.classList.add('armed'); tile.querySelector('.tt b').textContent = t('binSure');
+    binArmed = setTimeout(() => { binArmed = null; tile.classList.remove('armed'); tile.querySelector('.tt b').textContent = t('binTitle'); }, 5000);
+    return;
+  }
+  clearTimeout(binArmed); binArmed = null;
+  tile.querySelector('.tt b').textContent = t('working');
+  const r = await api('/api/bin/empty', {});
+  S.stats = r.stats || S.stats;
+  toast(t('binDone', { s: fmt(r.freed) }));
+  tile.classList.remove('armed'); tile.querySelector('.tt b').textContent = t('binTitle');
+  refreshBinTile();
 }
 // two-step "empty the recycle bin" button, used on the start screen and the result screen
 async function wireBin(btn, sub, box) {

@@ -28,8 +28,8 @@ main{position:relative;height:calc(100% - 64px)}
 .screen.on{display:flex}
 
 /* start */
-#start h1{font-size:36px;font-weight:800;letter-spacing:-.03em;margin:26px 0 6px;text-align:center}
-#start p.sub{color:var(--dim);margin-bottom:28px;text-align:center;max-width:620px}
+#start h1{font-size:clamp(26px,4.2vh,36px);font-weight:800;letter-spacing:-.03em;margin:clamp(6px,2.6vh,26px) 0 6px;text-align:center}
+#start p.sub{color:var(--dim);margin-bottom:clamp(12px,2.8vh,28px);text-align:center;max-width:620px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;width:100%;max-width:980px}
 .drive{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;text-align:left;transition:.15s;position:relative}
 .drive:hover{transform:translateY(-3px);border-color:#4a5068}
@@ -207,15 +207,15 @@ main{position:relative;height:calc(100% - 64px)}
 .step{width:100%;max-width:980px;display:flex;flex-direction:column;align-items:center}
 .step[hidden]{display:none}
 .modes{display:grid;grid-template-columns:1fr 1fr;gap:18px;width:100%}
-.modecard{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px 26px 24px;text-align:left;transition:.18s;display:flex;flex-direction:column;gap:4px}
+.modecard{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:clamp(14px,2.4vh,26px) 26px clamp(14px,2.2vh,24px);text-align:left;transition:.18s;display:flex;flex-direction:column;gap:4px}
 .modecard:hover{transform:translateY(-4px);border-color:#4a5068;box-shadow:0 24px 50px -24px #000c}
 .modecard.on{border-color:color-mix(in srgb,var(--ask) 60%,var(--line))}
 .modecard b{font-size:22px;letter-spacing:-.02em;margin-top:10px;color:var(--text);font-weight:800}
 .modecard span{color:var(--dim);font-size:14px;font-weight:400}
-.mart{height:150px;display:grid;place-items:center;background:radial-gradient(260px 120px at 50% 60%,#ffffff07,transparent);border-radius:16px}
+.mart{height:clamp(70px,15vh,150px);display:grid;place-items:center;background:radial-gradient(260px 120px at 50% 60%,#ffffff07,transparent);border-radius:16px}
 .mart svg{height:100%;width:auto;max-width:100%}
-.smartT{align-self:flex-start;font-size:15px;color:var(--dim);font-weight:600;margin:34px 0 12px}
-.smart{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;width:100%}
+.smartT{align-self:flex-start;font-size:15px;color:var(--dim);font-weight:600;margin:clamp(14px,3vh,30px) 0 12px}
+.smart{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:12px;width:100%}
 .smart .junkcard{grid-column:auto}
 .backlink{align-self:flex-start;color:var(--dim);font-size:14px;font-weight:600;margin:14px 0 -8px;padding:6px 10px;border-radius:10px}
 .backlink:hover{color:var(--text);background:#ffffff0a}
@@ -268,3 +268,18 @@ main{position:relative;height:calc(100% - 64px)}
 .dupe label small{color:var(--dim);flex:none}
 .dupe label.locked{opacity:.6}
 .dupe input{accent-color:var(--keep);margin-top:2px}
+
+/* smart-deck tiles: same language as the mode cards, one accent colour each */
+.tile{position:relative;display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:18px;text-align:left;color:var(--a);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--a) 13%,var(--card)) 0%,var(--card) 65%);border:1px solid color-mix(in srgb,var(--a) 26%,var(--line));
+  transition:transform .18s,border-color .18s,box-shadow .18s}
+.tile:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--a) 70%,var(--line));box-shadow:0 18px 40px -24px var(--a)}
+.tile .ta{width:54px;height:54px;flex:none;display:grid;place-items:center;border-radius:15px;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--a) 22%,#14161e),#14161e 75%);border:1px solid color-mix(in srgb,var(--a) 22%,transparent)}
+.tile .ta svg{width:38px;height:38px}
+.tile .tt{min-width:0}
+.tile b{display:block;color:var(--text);font-size:15.5px;font-weight:800;letter-spacing:-.01em}
+.tile .tt span{color:var(--dim);font-size:12.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .stat{position:absolute;top:10px;right:12px;font-style:normal;font-size:11px;font-weight:800;color:var(--a);background:color-mix(in srgb,var(--a) 15%,transparent);padding:2px 8px;border-radius:999px}
+.tile.dim{opacity:.55}
+.tile.armed{border-color:#ff4d6d;background:color-mix(in srgb,#ff4d6d 20%,var(--card));animation:pulse 1s infinite}
+@media (max-height:760px){ .tile .tt span{-webkit-line-clamp:1} .tile{padding:10px 14px} .tile .ta{width:44px;height:44px} .tile .ta svg{width:32px;height:32px} }
